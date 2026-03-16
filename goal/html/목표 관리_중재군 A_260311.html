@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>나의 목표 - 맞춤형 식생활 관리 (중재군 A)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F5F6FA; --card: #FFFFFF;
+  --primary: #2ECC71; --primary-light: #E8F8F0; --primary-dark: #27AE60;
+  --accent: #E91E63; --accent-light: #FCE4EC;
+  --warning: #FF9800; --warning-light: #FFF3E0;
+  --danger: #F44336; --danger-light: #FFEBEE;
+  --info: #2196F3; --info-light: #E3F2FD;
+  --purple: #7C4DFF; --purple-light: #EDE7F6;
+  --teal: #009688; --teal-light: #E0F2F1;
+  --text: #2D3436; --text-sub: #636E72; --text-hint: #B2BEC3;
+  --border: #E8ECF0;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --radius: 16px; --radius-sm: 10px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--bg);padding-bottom:90px}
+
+/* Header */
+.header{padding:22px 20px 14px;display:flex;align-items:center;justify-content:space-between}
+.header-left{display:flex;align-items:center;gap:8px}
+.header-title{font-size:24px;font-weight:900;color:var(--accent)}
+.header-hint{font-size:13px;color:var(--text-sub);font-weight:500}
+
+/* User Badge */
+.user-badge{margin:0 20px 14px;padding:14px 16px;background:linear-gradient(135deg,#5C6BC0 0%,#3F51B5 100%);border-radius:var(--radius);color:#fff;display:flex;align-items:center;justify-content:space-between}
+.user-badge-left{display:flex;align-items:center;gap:10px}
+.user-badge-id{font-size:14px;font-weight:700}
+.user-badge-meta{font-size:12px;opacity:0.8;margin-top:2px}
+.user-badge-week{padding:6px 14px;background:rgba(255,255,255,0.2);border-radius:20px;font-size:13px;font-weight:700}
+
+/* Week Dropdown */
+.week-dropdown-wrap{margin:0 20px 14px;position:relative}
+.week-dropdown-btn{width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--card);border:2px solid var(--primary);border-radius:var(--radius);font-family:inherit;font-size:15px;font-weight:700;color:var(--text);cursor:pointer;box-shadow:var(--shadow);transition:all 0.2s}
+.week-dropdown-btn:active{transform:scale(0.98)}
+.week-dropdown-arrow{font-size:12px;color:var(--primary);transition:transform 0.3s}
+.week-dropdown-arrow.open{transform:rotate(180deg)}
+.week-dropdown-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;max-height:280px;overflow-y:auto;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 30px rgba(0,0,0,0.15);z-index:50;padding:6px}
+.week-dropdown-list.open{display:block}
+.week-dropdown-list::-webkit-scrollbar{width:4px}
+.week-dropdown-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.week-dropdown-item{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.15s;color:var(--text-sub)}
+.week-dropdown-item:hover{background:#F5F6FA}
+.week-dropdown-item.active{background:var(--primary-light);color:var(--primary-dark);font-weight:700}
+.week-dropdown-item.current{background:linear-gradient(135deg,var(--primary-light),#D5F5E3)}
+.week-dropdown-item .wdi-label{display:flex;align-items:center;gap:8px}
+.week-dropdown-item .wdi-badge{padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700}
+.week-dropdown-item .wdi-pct{font-size:13px;font-weight:700}
+
+/* View Toggle */
+.view-toggle{display:flex;padding:0 20px;margin-bottom:16px;gap:6px}
+.toggle-btn{flex:1;padding:12px 0;border:none;border-radius:var(--radius-sm);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.25s;background:var(--card);color:var(--text-sub);box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.toggle-btn.active{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(46,204,113,0.3)}
+
+/* Pages */
+.page{display:none}.page.active{display:block}
+
+/* Summary Banner */
+.summary-banner{margin:0 20px 16px;padding:18px 20px;border-radius:var(--radius);color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.15)}
+.summary-banner.initial{background:linear-gradient(135deg,#7C4DFF 0%,#651FFF 100%)}
+.summary-banner.static{background:linear-gradient(135deg,#5C6BC0 0%,#3F51B5 100%)}
+.summary-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.summary-label{font-size:14px;font-weight:600;opacity:0.9}
+.summary-pct{font-size:30px;font-weight:900}
+.summary-bar-bg{height:8px;background:rgba(255,255,255,0.3);border-radius:4px;overflow:hidden}
+.summary-bar-fill{height:100%;background:#fff;border-radius:4px;transition:width 0.6s ease}
+.summary-msg{margin-top:10px;font-size:14px;font-weight:500;opacity:0.95;line-height:1.5}
+.summary-details{display:flex;gap:8px;margin-top:12px}
+.summary-detail-item{flex:1;padding:10px 8px;background:rgba(255,255,255,0.15);border-radius:10px;text-align:center}
+.summary-detail-item .val{font-size:18px;font-weight:800}
+.summary-detail-item .lbl{font-size:11px;opacity:0.85;margin-top:2px}
+
+/* Analysis Section */
+.analysis-section{margin:0 20px 16px;background:var(--card);border-radius:var(--radius);padding:18px 18px;box-shadow:var(--shadow)}
+.analysis-title{font-size:16px;font-weight:800;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.factor-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px 12px;border-radius:var(--radius-sm);background:#FAFBFC}
+.factor-rank{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0}
+.factor-info{flex:1}
+.factor-name{font-size:15px;font-weight:700}
+.factor-desc{font-size:12px;color:var(--text-sub);margin-top:2px}
+.factor-bar{height:8px;background:#F0F2F5;border-radius:4px;overflow:hidden;margin-top:6px}
+.factor-bar-fill{height:100%;border-radius:4px}
+.analysis-note{margin-top:10px;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;line-height:1.6}
+.analysis-note.mixed{background:linear-gradient(135deg,var(--purple-light),#E8EAF6);color:#311B92;border:1px solid #B39DDB}
+
+/* Health Grid */
+.health-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px}
+.health-item{padding:10px 8px;border-radius:10px;text-align:center;font-size:13px;font-weight:600}
+.health-item.safe{background:var(--primary-light);color:var(--primary-dark)}
+.health-item.danger{background:var(--danger-light);color:var(--danger)}
+
+/* Static Goal Notice */
+.static-notice{margin:0 20px 14px;padding:14px 16px;border-radius:var(--radius);background:linear-gradient(135deg,var(--purple-light) 0%,#D1C4E9 100%);border:1px solid #B39DDB;display:flex;gap:12px;align-items:flex-start}
+.static-notice-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.static-notice-content{flex:1}
+.static-notice-title{font-size:15px;font-weight:700;color:#4527A0;margin-bottom:3px}
+.static-notice-desc{font-size:13px;color:#37474F;line-height:1.6}
+
+/* Goal Cards */
+.goal-section{padding:0 20px}
+.goal-card{background:var(--card);border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;box-shadow:var(--shadow);border-left:5px solid var(--primary);cursor:pointer;transition:all 0.2s;overflow:hidden}
+.goal-card:active{transform:scale(0.98)}
+.goal-card.warning{border-left-color:var(--warning)}
+.goal-card.danger{border-left-color:var(--danger)}
+.goal-card.excellent{border-left-color:var(--primary)}
+.goal-card.adjusted{border-left-color:var(--info)}
+.goal-card.teal{border-left-color:var(--teal)}
+
+.goal-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.goal-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.goal-icon.green{background:var(--primary-light)}
+.goal-icon.orange{background:var(--warning-light)}
+.goal-icon.red{background:var(--danger-light)}
+.goal-icon.blue{background:var(--info-light)}
+.goal-icon.teal{background:var(--teal-light)}
+
+.goal-info{flex:1;min-width:0}
+.goal-name{font-size:16px;font-weight:700;color:var(--text);margin-bottom:2px;line-height:1.3}
+.goal-target{font-size:14px;color:var(--text-sub);font-weight:500}
+.goal-related{font-size:12px;color:var(--text-hint);margin-top:3px}
+
+.goal-badge{display:inline-flex;align-items:center;gap:3px;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.goal-badge.streak{background:#FFF8E1;color:#F57F17}
+.goal-badge.improving{background:var(--warning-light);color:#E65100}
+.goal-badge.excellent{background:var(--primary-light);color:var(--primary-dark)}
+.goal-badge.new{background:var(--purple-light);color:var(--purple)}
+.goal-badge.danger{background:var(--danger-light);color:var(--danger)}
+.goal-badge.teal{background:var(--teal-light);color:var(--teal)}
+.goal-badge.static{background:#E8EAF6;color:#3F51B5}
+
+.goal-progress{margin-top:12px}
+.goal-progress-info{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.goal-current{font-size:13px;color:var(--text-sub);font-weight:500}
+.goal-pct{font-size:15px;font-weight:800}
+.goal-bar-bg{height:8px;background:#F0F2F5;border-radius:4px;overflow:hidden}
+.goal-bar-fill{height:100%;border-radius:4px;transition:width 0.5s ease}
+.goal-bar-fill.green{background:var(--primary)}.goal-bar-fill.orange{background:var(--warning)}
+.goal-bar-fill.red{background:var(--danger)}.goal-bar-fill.blue{background:var(--info)}
+.goal-bar-fill.teal{background:var(--teal)}
+
+/* Goal Detail */
+.goal-detail{max-height:0;overflow:hidden;transition:max-height 0.4s ease}
+.goal-detail.open{max-height:1500px}
+.goal-detail-inner{padding-top:14px;margin-top:14px;border-top:1px solid var(--border)}
+.detail-block{margin-bottom:14px}
+.detail-block-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.detail-block-content{font-size:14px;color:var(--text);line-height:1.7;padding:10px 12px;background:#FAFBFC;border-radius:10px}
+.action-plan-item{padding:8px 10px;margin-bottom:5px;background:#F8FFF8;border-radius:8px;border-left:3px solid var(--primary);font-size:14px;line-height:1.6}
+
+/* Calendar */
+.calendar-section{margin:18px 20px 0;background:var(--card);border-radius:var(--radius);padding:18px 18px;box-shadow:var(--shadow)}
+.cal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.cal-month{font-size:17px;font-weight:800}
+.cal-legend{display:flex;gap:10px;font-size:12px;color:var(--text-sub);font-weight:500}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-dow{text-align:center;font-size:12px;font-weight:600;color:var(--text-hint);padding-bottom:6px}
+.cal-day{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:14px;font-weight:600;border:2px solid transparent;gap:1px;cursor:pointer}
+.cal-day.empty{background:transparent;cursor:default}
+.cal-day.success{background:var(--primary-light);border-color:var(--primary)}
+.cal-day.partial{background:#FFF8E1;border-color:var(--warning)}
+.cal-day.fail{background:var(--danger-light);border-color:var(--danger)}
+.cal-day.today{background:#E8EAF6;border-color:#5C6BC0}
+.cal-day.future{color:var(--text-hint)}
+.cal-day-num{font-size:14px;font-weight:700}
+.cal-day-score{font-size:9px;font-weight:600}
+
+/* Bottom Tab */
+.bottom-tab{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;display:flex;box-shadow:0 -2px 12px rgba(0,0,0,0.06);z-index:100;padding:8px 0 env(safe-area-inset-bottom,10px)}
+.tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;font-size:12px;font-weight:600;color:var(--text-hint);cursor:pointer;border:none;background:none;font-family:inherit}
+.tab-item.active{color:var(--primary)}
+.tab-icon{font-size:20px}
+
+.expand-arrow{display:inline-block;font-size:12px;color:var(--text-hint);transition:transform 0.3s;margin-left:4px}
+.expand-arrow.open{transform:rotate(180deg)}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <span class="header-title">나의 건강 목표</span><span style="font-size:22px">🎯</span>
+  </div>
+  <span class="header-hint">작은 실천이 큰 변화로!</span>
+</div>
+
+<!-- USER BADGE -->
+<div class="user-badge">
+  <div class="user-badge-left">
+    <span style="font-size:24px">👤</span>
+    <div>
+      <div class="user-badge-id">R-495-00145911</div>
+      <div class="user-badge-meta">중재군 A · 정적 목표</div>
+    </div>
+  </div>
+  <span class="user-badge-week" id="week-badge-label">1주차</span>
+</div>
+
+<!-- VIEW TOGGLE (목표 + 캘린더 2탭) -->
+<div class="view-toggle">
+  <button class="toggle-btn active" onclick="switchView('current')">🎯 목표</button>
+  <button class="toggle-btn" onclick="switchView('calendar')">📅 캘린더</button>
+</div>
+
+<!-- WEEK SELECTOR -->
+<div class="week-dropdown-wrap">
+  <button class="week-dropdown-btn" id="weekDropdownBtn" onclick="toggleWeekDropdown()">
+    <span id="weekDropdownLabel">1주차 (시작)</span>
+    <span class="week-dropdown-arrow" id="weekDropdownArrow">▼</span>
+  </button>
+  <div class="week-dropdown-list" id="weekDropdownList"></div>
+</div>
+
+<!-- ══════════════════════════ PAGE 1: 목표 ══════════════════════════ -->
+<div class="page active" id="page-current">
+
+  <!-- Analysis -->
+  <div class="analysis-section">
+    <div class="analysis-title">🔍 나의 건강 분석 결과</div>
+    <div style="font-size:14px;color:var(--text-sub);margin-bottom:12px;line-height:1.6;">
+      검진 데이터와 생활습관을 분석하여,<br>가장 개선이 필요한 영역을 찾았습니다.
+    </div>
+    <div class="factor-row">
+      <div class="factor-rank" style="background:var(--accent);">1</div>
+      <div class="factor-info">
+        <div class="factor-name">🍽️ 식습관</div>
+        <div class="factor-desc">건강 개선에 가장 큰 영향을 미치는 요인</div>
+        <div class="factor-bar"><div class="factor-bar-fill" style="width:92%;background:var(--accent);"></div></div>
+      </div>
+    </div>
+    <div class="factor-row">
+      <div class="factor-rank" style="background:var(--warning);">2</div>
+      <div class="factor-info">
+        <div class="factor-name">🚬 흡연</div>
+        <div class="factor-desc">현재 금연 상태로 유지 중 — 잘하고 계세요!</div>
+        <div class="factor-bar"><div class="factor-bar-fill" style="width:45%;background:var(--warning);"></div></div>
+      </div>
+    </div>
+    <div class="factor-row">
+      <div class="factor-rank" style="background:var(--info);">3</div>
+      <div class="factor-info">
+        <div class="factor-name">🍺 음주</div>
+        <div class="factor-desc">현재 적은 음주량 — 양호한 상태예요</div>
+        <div class="factor-bar"><div class="factor-bar-fill" style="width:30%;background:var(--info);"></div></div>
+      </div>
+    </div>
+    <div class="factor-row">
+      <div class="factor-rank" style="background:var(--text-hint);">4</div>
+      <div class="factor-info">
+        <div class="factor-name">🏃 신체활동</div>
+        <div class="factor-desc">중강도 활동 수행 중</div>
+        <div class="factor-bar"><div class="factor-bar-fill" style="width:20%;background:var(--text-hint);"></div></div>
+      </div>
+    </div>
+
+    <div class="analysis-note mixed">
+      🎯 <strong>식습관이 1순위</strong>이므로 3개 목표 모두 식습관 중심으로 설정되었어요.<br>
+      🔒 설정된 목표는 12주간 동일하게 유지됩니다.
+    </div>
+
+    <!-- Health Indicators -->
+    <div style="margin-top:14px;font-size:14px;font-weight:700;margin-bottom:8px;">💊 대사증후군 검진 결과</div>
+    <div class="health-grid">
+      <div class="health-item danger">🔴 허리둘레</div>
+      <div class="health-item danger">🔴 혈압</div>
+      <div class="health-item safe">🟢 공복혈당</div>
+      <div class="health-item safe">🟢 중성지방</div>
+      <div class="health-item danger">🔴 HDL-C</div>
+      <div class="health-item danger" style="grid-column:span 3;background:var(--accent-light);color:var(--accent);font-weight:800;">⚠️ 대사증후군 진단 (5가지 중 3개 이상 해당)</div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-banner" id="summary-banner">
+    <div class="summary-top">
+      <span class="summary-label" id="summary-week-label">1주차 종합 달성률</span>
+      <span class="summary-pct" id="summary-pct">—</span>
+    </div>
+    <div class="summary-bar-bg"><div class="summary-bar-fill" id="summary-bar" style="width:0%"></div></div>
+    <div class="summary-msg" id="summary-msg"></div>
+    <div class="summary-details" id="summary-details" style="display:none;"></div>
+  </div>
+
+  <!-- Goal Cards Container -->
+  <div id="goal-cards-container"></div>
+</div>
+
+<!-- ══════════════════════════ PAGE 2: 캘린더 ══════════════════════════ -->
+<div class="page" id="page-calendar">
+  <div class="calendar-section">
+    <div class="cal-header">
+      <span class="cal-month">2026년 1월</span>
+      <div class="cal-legend"><span>✅ 달성</span><span>⚠️ 부분</span><span>❌ 미달</span></div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+  </div>
+
+  <!-- Day Detail Panel -->
+  <div id="day-detail" style="display:none;margin:14px 20px 0;background:var(--card);border-radius:var(--radius);box-shadow:0 4px 20px rgba(0,0,0,0.12);overflow:hidden;">
+    <div id="day-detail-header" style="padding:14px 18px;color:#fff;display:flex;justify-content:space-between;align-items:center;">
+      <span id="day-detail-title" style="font-size:16px;font-weight:800;"></span>
+      <span onclick="closeDayDetail()" style="cursor:pointer;font-size:20px;opacity:0.8;padding:4px;">✕</span>
+    </div>
+    <div id="day-detail-body" style="padding:16px 18px;"></div>
+  </div>
+
+  <div style="margin:14px 20px 0;padding:14px 16px;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);">
+    <div style="font-size:15px;font-weight:700;margin-bottom:8px;">🔥 연속 달성 기록</div>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;text-align:center;padding:12px;background:var(--teal-light);border-radius:10px;">
+        <div style="font-size:22px;font-weight:900;color:var(--teal);">3일</div>
+        <div style="font-size:12px;color:var(--teal);">현재 연속</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:12px;background:var(--primary-light);border-radius:10px;">
+        <div style="font-size:22px;font-weight:900;color:var(--primary-dark);">4일</div>
+        <div style="font-size:12px;color:var(--primary-dark);">최장 기록</div>
+      </div>
+      <div style="flex:1;text-align:center;padding:12px;background:#F0F2F5;border-radius:10px;">
+        <div style="font-size:22px;font-weight:900;color:var(--text);">54%</div>
+        <div style="font-size:12px;color:var(--text-sub);">종합 달성률</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM TAB -->
+<div class="bottom-tab">
+  <button class="tab-item"><span class="tab-icon">🏠</span>홈</button>
+  <button class="tab-item"><span class="tab-icon">📸</span>기록</button>
+  <button class="tab-item active"><span class="tab-icon">🎯</span>목표</button>
+  <button class="tab-item"><span class="tab-icon">📈</span>리포트</button>
+  <button class="tab-item"><span class="tab-icon">💬</span>코칭</button>
+</div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// 중재군 A: 정적 목표 (Static Goal) — 12주간 동일 목표 유지
+// 달성 여부 및 달성률만 안내 (맞춤형 피드백 없음)
+// ═══════════════════════════════════════════════════════════════════
+
+// 고정 목표 3개 (모든 주차에서 동일)
+const FIXED_GOALS = {
+  water: {
+    category: "diet",
+    icon: "💧", iconClass: "blue",
+    title: "충분한 물 마시기",
+    target: "매일 6컵 이상, 주 7회",
+    related: "물 섭취 습관",
+    current_status: "현재 물을 하루 1컵 이하 또는 거의 안 마시고 있어요.",
+    daily_goal: "매일 1회", weekly_target: 7, is_more_than: true,
+    reason: "충분한 물 섭취는 신진대사를 원활하게 하고 체내 노폐물 배출에 도움을 주며, 혈액순환 개선 및 혈압 관리에 긍정적인 영향을 미칩니다.",
+    final_goal: "하루 6컵 이상 물 마시기 주 7회 이상 실천하기",
+    action_plans: [
+      "매일 6컵 이상의 물을 충분히 마십니다.",
+      "물을 마시기 쉬운 곳에 두고 습관적으로 마십니다.",
+      "수분 섭취를 돕기 위해 보리차나 허브차를 마시는 것도 좋습니다."
+    ]
+  },
+  meat: {
+    category: "diet",
+    icon: "🥩", iconClass: "orange",
+    title: "지방 많은 육류 섭취 줄이기",
+    target: "주 2회 이하",
+    related: "지방 많은 육류 (삼겹살, 갈비 등)",
+    current_status: "현재 지방 많은 육류를 하루 2회 이상 섭취하고 있어요.",
+    daily_goal: "주 0회 지향", weekly_target: 2, is_more_than: false,
+    reason: "지방 많은 육류의 과도한 섭취는 포화지방과 콜레스테롤 섭취를 증가시켜 복부 비만, 이상지질혈증, 고혈압 및 심혈관 질환 위험을 높입니다.",
+    final_goal: "지방 많은 육류 섭취 주 2회 이하 실천하기",
+    action_plans: [
+      "삼겹살, 갈비 등 지방이 많은 육류 대신 살코기 위주의 닭가슴살, 생선, 두부 등을 섭취합니다.",
+      "육류 섭취 시에는 굽거나 튀기는 대신 삶거나 찌는 조리법을 선택합니다.",
+      "외식 시 메뉴 선택에 신중하고, 지방이 적은 식단을 우선적으로 선택합니다."
+    ]
+  },
+  salty: {
+    category: "diet",
+    icon: "🧂", iconClass: "red",
+    title: "짜게 먹는 식습관 개선하기",
+    target: "주 3회 이하",
+    related: "짠 음식 (젓갈, 장아찌, 국물 위주 식사 등)",
+    current_status: "현재 짜게 먹는 식습관이 있는 것으로 나타났어요.",
+    daily_goal: "주 0회 지향", weekly_target: 3, is_more_than: false,
+    reason: "나트륨 과다 섭취는 혈압 상승의 주요 원인이며, 대사증후군 위험을 높입니다. 짜게 먹는 습관을 개선하면 혈압 조절에 큰 도움이 됩니다.",
+    final_goal: "짜게 먹는 식습관 개선 — 주 3회 이하로 줄이기",
+    action_plans: [
+      "국물 섭취를 절반으로 줄이고, 건더기 위주로 먹습니다.",
+      "젓갈, 장아찌 등 반찬을 저염 버전으로 대체합니다.",
+      "간이 센 음식 대신 채소나 과일로 입맛을 전환합니다."
+    ]
+  }
+};
+
+const weekData = {
+  1: {
+    label: "1주차",
+    type: "initial",
+    summary: { pct: null, msg: "오늘부터 나만을 위한 맞춤 목표가 시작됩니다! 💪" },
+    goals: [
+      Object.assign({}, FIXED_GOALS.water, {
+        cardClass: "adjusted",
+        badge: null,
+        achievement: null, achievementLabel: "측정 전",
+        barWidth: 0, barClass: "blue", pctColor: "var(--info)"
+      }),
+      Object.assign({}, FIXED_GOALS.meat, {
+        cardClass: "warning",
+        badge: null,
+        achievement: null, achievementLabel: "측정 전",
+        barWidth: 0, barClass: "orange", pctColor: "var(--warning)"
+      }),
+      Object.assign({}, FIXED_GOALS.salty, {
+        cardClass: "danger",
+        badge: null,
+        achievement: null, achievementLabel: "측정 전",
+        barWidth: 0, barClass: "red", pctColor: "var(--danger)"
+      })
+    ]
+  },
+
+  2: {
+    label: "2주차",
+    type: "static",
+    summary: {
+      pct: "62%",
+      msg: "이번 주 종합 달성률은 62%입니다.",
+      details: [
+        { val: "100%", lbl: "💧 물 마시기" },
+        { val: "57%", lbl: "🥩 육류 줄이기" },
+        { val: "29%", lbl: "🧂 짜게 먹기" }
+      ]
+    },
+    goals: [
+      Object.assign({}, FIXED_GOALS.water, {
+        cardClass: "excellent",
+        badge: { text: "✅ 달성", cls: "excellent" },
+        achievement: "100%", achievementLabel: "목표 7회 → 실제 7회",
+        barWidth: 100, barClass: "green", pctColor: "var(--primary)"
+      }),
+      Object.assign({}, FIXED_GOALS.meat, {
+        cardClass: "warning",
+        badge: { text: "⚠️ 미달", cls: "improving" },
+        achievement: "57%", achievementLabel: "목표 2회 이하 → 실제 3회",
+        barWidth: 57, barClass: "orange", pctColor: "var(--warning)"
+      }),
+      Object.assign({}, FIXED_GOALS.salty, {
+        cardClass: "danger",
+        badge: { text: "❌ 미달", cls: "danger" },
+        achievement: "29%", achievementLabel: "목표 3회 이하 → 실제 5회",
+        barWidth: 29, barClass: "red", pctColor: "var(--danger)"
+      })
+    ]
+  },
+
+  3: {
+    label: "3주차",
+    type: "static",
+    summary: {
+      pct: "76%",
+      msg: "이번 주 종합 달성률은 76%입니다.",
+      details: [
+        { val: "100%", lbl: "💧 물 마시기" },
+        { val: "86%", lbl: "🥩 육류 줄이기" },
+        { val: "43%", lbl: "🧂 짜게 먹기" }
+      ]
+    },
+    goals: [
+      Object.assign({}, FIXED_GOALS.water, {
+        cardClass: "excellent",
+        badge: { text: "✅ 달성", cls: "excellent" },
+        achievement: "100%", achievementLabel: "목표 7회 → 실제 7회",
+        barWidth: 100, barClass: "green", pctColor: "var(--primary)"
+      }),
+      Object.assign({}, FIXED_GOALS.meat, {
+        cardClass: "excellent",
+        badge: { text: "✅ 달성", cls: "excellent" },
+        achievement: "86%", achievementLabel: "목표 2회 이하 → 실제 2회",
+        barWidth: 86, barClass: "green", pctColor: "var(--primary)"
+      }),
+      Object.assign({}, FIXED_GOALS.salty, {
+        cardClass: "warning",
+        badge: { text: "⚠️ 미달", cls: "improving" },
+        achievement: "43%", achievementLabel: "목표 3회 이하 → 실제 4회",
+        barWidth: 43, barClass: "orange", pctColor: "var(--warning)"
+      })
+    ]
+  },
+
+  4: {
+    label: "4주차 (현재)",
+    type: "static",
+    summary: {
+      pct: "86%",
+      msg: "이번 주 종합 달성률은 86%입니다.",
+      details: [
+        { val: "100%", lbl: "💧 물 마시기" },
+        { val: "100%", lbl: "🥩 육류 줄이기" },
+        { val: "57%", lbl: "🧂 짜게 먹기" }
+      ]
+    },
+    goals: [
+      Object.assign({}, FIXED_GOALS.water, {
+        cardClass: "excellent",
+        badge: { text: "✅ 달성", cls: "excellent" },
+        achievement: "100%", achievementLabel: "목표 7회 → 실제 7회",
+        barWidth: 100, barClass: "green", pctColor: "var(--primary)"
+      }),
+      Object.assign({}, FIXED_GOALS.meat, {
+        cardClass: "excellent",
+        badge: { text: "✅ 달성", cls: "excellent" },
+        achievement: "100%", achievementLabel: "목표 2회 이하 → 실제 1회",
+        barWidth: 100, barClass: "green", pctColor: "var(--primary)"
+      }),
+      Object.assign({}, FIXED_GOALS.salty, {
+        cardClass: "warning",
+        badge: { text: "⚠️ 미달", cls: "improving" },
+        achievement: "57%", achievementLabel: "목표 3회 이하 → 실제 3회",
+        barWidth: 57, barClass: "orange", pctColor: "var(--warning)"
+      })
+    ]
+  }
+};
+
+let currentWeek = 1;
+
+// ═══════════════ WEEK DROPDOWN ═══════════════
+const weekLabels = {
+  1: { label: '1주차 (초기 목표 설정)', badge: '🟣 시작', pct: '—' },
+  2: { label: '2주차', badge: '', pct: '62%' },
+  3: { label: '3주차', badge: '', pct: '76%' },
+  4: { label: '4주차 (현재)', badge: '', pct: '86%' }
+};
+const CURRENT_WEEK = 4;
+
+function renderWeekDropdown() {
+  const list = document.getElementById('weekDropdownList');
+  let html = '';
+  Object.keys(weekLabels).forEach(function(w) {
+    const wk = weekLabels[w];
+    const isCurrent = parseInt(w) === CURRENT_WEEK;
+    const isActive = parseInt(w) === currentWeek;
+    let cls = '';
+    if (isActive) cls = 'active';
+    if (isCurrent && !isActive) cls = 'current';
+    let pctColor = 'var(--text-hint)';
+    if (wk.pct === '86%' || wk.pct === '76%') pctColor = 'var(--primary)';
+    else if (wk.pct === '62%') pctColor = 'var(--warning)';
+    html += '<div class="week-dropdown-item ' + cls + '" onclick="selectWeek(' + w + ')">';
+    html += '<span class="wdi-label">';
+    html += '<span>' + wk.label + '</span>';
+    if (wk.badge) html += '<span class="wdi-badge" style="background:var(--purple-light);color:var(--purple)">' + wk.badge + '</span>';
+    html += '</span>';
+    html += '<span class="wdi-pct" style="color:' + pctColor + '">' + wk.pct + '</span>';
+    html += '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function toggleWeekDropdown() {
+  const list = document.getElementById('weekDropdownList');
+  const arrow = document.getElementById('weekDropdownArrow');
+  list.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function selectWeek(w) {
+  currentWeek = w;
+  const wk = weekLabels[w];
+  document.getElementById('weekDropdownLabel').textContent = wk.label;
+  document.getElementById('week-badge-label').textContent = w + '주차';
+  document.getElementById('weekDropdownList').classList.remove('open');
+  document.getElementById('weekDropdownArrow').classList.remove('open');
+  renderWeekDropdown();
+  renderAll();
+}
+
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.week-dropdown-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('weekDropdownList').classList.remove('open');
+    document.getElementById('weekDropdownArrow').classList.remove('open');
+  }
+});
+
+renderWeekDropdown();
+
+function switchView(v) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + v).classList.add('active');
+  const btns = document.querySelectorAll('.toggle-btn');
+  const viewMap = {'current':0,'calendar':1};
+  if (viewMap[v] !== undefined) btns[viewMap[v]].classList.add('active');
+  var weekWrap = document.querySelector('.week-dropdown-wrap');
+  if (v === 'current') {
+    weekWrap.style.display = 'block';
+  } else {
+    weekWrap.style.display = 'none';
+    document.getElementById('weekDropdownList').classList.remove('open');
+    document.getElementById('weekDropdownArrow').classList.remove('open');
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById('detail-' + id);
+  const arrow = document.getElementById('arrow-' + id);
+  if (el.classList.contains('open')) {
+    el.classList.remove('open');
+    if (arrow) arrow.classList.remove('open');
+  } else {
+    document.querySelectorAll('.goal-detail').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.expand-arrow').forEach(a => a.classList.remove('open'));
+    el.classList.add('open');
+    if (arrow) arrow.classList.add('open');
+  }
+}
+
+function renderAll() {
+  const d = weekData[currentWeek];
+  if (!d) return;
+
+  // Summary banner class
+  const banner = document.getElementById('summary-banner');
+  banner.className = 'summary-banner ' + (d.type === 'initial' ? 'initial' : 'static');
+
+  document.getElementById('summary-week-label').textContent = currentWeek + '주차 종합 달성률';
+  document.getElementById('summary-pct').textContent = d.summary.pct || '—';
+  document.getElementById('summary-bar').style.width = (parseInt(d.summary.pct) || 0) + '%';
+  document.getElementById('summary-msg').textContent = d.summary.msg;
+  const detEl = document.getElementById('summary-details');
+  if (d.summary.details) {
+    detEl.innerHTML = d.summary.details.map(di => `<div class="summary-detail-item"><div class="val">${di.val}</div><div class="lbl">${di.lbl}</div></div>`).join('');
+    detEl.style.display = 'flex';
+  } else { detEl.style.display = 'none'; }
+
+  // Goal cards
+  const container = document.getElementById('goal-cards-container');
+  let html = '<div class="goal-section">';
+  d.goals.forEach(g => { html += renderGoalCard(g); });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderGoalCard(g) {
+  const uid = (g.title + currentWeek).replace(/[^a-zA-Z0-9가-힣]/g, '');
+  return `
+  <div class="goal-card ${g.cardClass}" onclick="toggleDetail('${uid}')">
+    <div class="goal-card-top">
+      <div class="goal-icon ${g.iconClass}">${g.icon}</div>
+      <div class="goal-info">
+        <div class="goal-name">${g.title} <span class="expand-arrow" id="arrow-${uid}">▼</span></div>
+        <div class="goal-target">${g.target} <span style="font-size:11px;color:var(--text-hint);">🔒 고정</span></div>
+        <div class="goal-related">${g.related}</div>
+      </div>
+      <span class="goal-badge ${g.badge ? g.badge.cls : ''}">${g.badge ? g.badge.text : ''}</span>
+    </div>
+    <div class="goal-progress">
+      <div class="goal-progress-info">
+        <span class="goal-current">${g.achievementLabel}</span>
+        <span class="goal-pct" style="color:${g.pctColor}">${g.achievement || '—'}</span>
+      </div>
+      <div class="goal-bar-bg"><div class="goal-bar-fill ${g.barClass}" style="width:${g.barWidth}%"></div></div>
+    </div>
+    <div class="goal-detail" id="detail-${uid}">
+      <div class="goal-detail-inner">
+        <div class="detail-block">
+          <div class="detail-block-title">🎯 최종 목표</div>
+          <div class="detail-block-content">${g.final_goal}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-block-title">🔍 왜 이 목표가 선정되었나요?</div>
+          <div class="detail-block-content">${g.reason}</div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-block-title">💡 이렇게 실천해보세요!</div>
+          ${g.action_plans.map(ap => `<div class="action-plan-item">${ap}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+renderAll();
+
+// ═══════════════════ INTERACTIVE CALENDAR ═══════════════════
+const dayNames = ['일','월','화','수','목','금','토'];
+const TODAY = 22;
+
+// 중재군 A: 목표가 12주간 동일 (물 7회, 육류 2회 이하, 짠 음식 3회 이하)
+function getWeekGoals(day) {
+  return [
+    { icon:'💧', name:'충분한 물 마시기', target:'매일 6컵 이상, 주 7회' },
+    { icon:'🥩', name:'지방 많은 육류 줄이기', target:'주 2회 이하' },
+    { icon:'🧂', name:'짜게 먹는 식습관 개선', target:'주 3회 이하' }
+  ];
+}
+
+const calendarData = {
+  1:  { goals:[true,true,true], meals:['현미밥+된장찌개','닭가슴살 샐러드','두부김치'], water:7, note:'첫 날 완벽하게 실천!' },
+  2:  { goals:[true,true,false], meals:['토스트+우유','비빔밥','젓갈+국물 위주 저녁'], water:8, note:'저녁에 짠 음식 섭취' },
+  3:  { goals:[true,true,true], meals:['오트밀+과일','생선구이 정식','채소볶음+현미밥'], water:6, note:'균형 잡힌 식단 유지' },
+  4:  { goals:[true,false,false], meals:['김밥','라면+김치','삼겹살+짠 반찬'], water:7, note:'주말, 육류+짠 음식 증가' },
+  5:  { goals:[true,false,false], meals:['브런치','갈비탕','장아찌+국물 위주'], water:6, note:'주말 외식, 짠 음식·육류 증가' },
+  6:  { goals:[true,true,false], meals:['현미밥+미역국','두부조림 정식','된장찌개(짜게)'], water:8, note:'된장찌개 국물 과다 섭취' },
+  7:  { goals:[true,false,false], meals:['요거트','돈까스','제육볶음+젓갈'], water:7, note:'육류+짠 음식 동시 섭취' },
+  8:  { goals:[true,true,true], meals:['현미밥+콩나물국','생선구이+나물','채소비빔밥'], water:8, note:'잘 실천하고 있어요!' },
+  9:  { goals:[false,false,false], meals:['결식','삼겹살 회식','야식(치킨)'], water:2, note:'아침 결식, 회식으로 전 목표 미달' },
+  10: { goals:[true,true,true], meals:['시리얼+우유','불고기 정식+샐러드','두부조림+나물'], water:9, note:'전날 만회 성공!' },
+  11: { goals:[true,true,true], meals:['현미밥+계란찜','생선구이+샐러드','나물 정식'], water:8, note:'3가지 목표 모두 달성!' },
+  12: { goals:[true,true,true], meals:['오트밀+과일','비빔밥+채소','생선조림+나물'], water:7, note:'물 섭취 안정적' },
+  13: { goals:[true,true,false], meals:['현미밥+미역국','두부샐러드','국물 위주 저녁'], water:9, note:'저녁 국물 과다' },
+  14: { goals:[true,true,false], meals:['요거트+과일','닭가슴살 도시락','장아찌+된장찌개'], water:8, note:'짠 반찬 섭취' },
+  15: { goals:[true,true,true], meals:['현미밥+된장국','생선구이+샐러드','두부조림+나물'], water:8, note:'잘 실천!' },
+  16: { goals:[true,true,true], meals:['요거트+과일','한식 정식','채소볶음밥'], water:9, note:'모든 목표 달성!' },
+  17: { goals:[true,true,false], meals:['토스트','닭가슴살 샐러드','된장찌개(짜게)'], water:7, note:'저녁에 짠 음식' },
+  18: { goals:[true,true,true], meals:['현미밥+미역국','비빔밥+채소','생선구이 정식'], water:8, note:'잘 실천!' },
+  19: { goals:[true,false,false], meals:['브런치','갈비찜','떡볶이+짠 반찬'], water:6, note:'주말, 육류+짠 음식' },
+  20: { goals:[true,true,true], meals:['오트밀','두부조림+나물','채소스프'], water:8, note:'주말이지만 잘 관리!' },
+  21: { goals:[true,true,true], meals:['현미밥+계란찜','생선구이 정식','나물+두부'], water:9, note:'주간 마무리 잘 실천' },
+  22: { goals:[null,null,null], meals:[], water:null, note:'오늘 — 기록 진행 중' }
+};
+
+function renderCalendar() {
+  const grid = document.getElementById('cal-grid');
+  let html = '';
+  dayNames.forEach(d => { html += '<div class="cal-dow">'+d+'</div>'; });
+  for (let i = 0; i < 4; i++) html += '<div class="cal-day empty"></div>';
+  for (let day = 1; day <= 31; day++) {
+    const data = calendarData[day];
+    if (day === TODAY) {
+      html += '<div class="cal-day today" onclick="showDayDetail('+day+')"><span class="cal-day-num">'+day+'</span><span class="cal-day-score">오늘</span></div>';
+    } else if (day > TODAY || !data) {
+      html += '<div class="cal-day future"><span class="cal-day-num">'+day+'</span></div>';
+    } else {
+      const achieved = data.goals.filter(g => g === true).length;
+      const total = data.goals.length;
+      let cls = 'partial';
+      if (achieved === total) cls = 'success';
+      else if (achieved === 0) cls = 'fail';
+      html += '<div class="cal-day '+cls+'" onclick="showDayDetail('+day+')"><span class="cal-day-num">'+day+'</span><span class="cal-day-score">'+achieved+'/'+total+'</span></div>';
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function showDayDetail(day) {
+  const data = calendarData[day];
+  const panel = document.getElementById('day-detail');
+  const header = document.getElementById('day-detail-header');
+  const title = document.getElementById('day-detail-title');
+  const body = document.getElementById('day-detail-body');
+  if (!data) { panel.style.display = 'none'; return; }
+
+  const goals = getWeekGoals(day);
+  const isToday = (day === TODAY);
+  const achieved = data.goals.filter(g => g === true).length;
+  const total = data.goals.length;
+
+  if (isToday) header.style.background = 'linear-gradient(135deg,#5C6BC0,#3F51B5)';
+  else if (achieved === total) header.style.background = 'linear-gradient(135deg,#2ECC71,#27AE60)';
+  else if (achieved === 0) header.style.background = 'linear-gradient(135deg,#F44336,#D32F2F)';
+  else header.style.background = 'linear-gradient(135deg,#FF9800,#F57C00)';
+
+  const dow = dayNames[new Date(2026, 0, day).getDay()];
+  title.textContent = '1월 ' + day + '일 (' + dow + ')' + (isToday ? ' — 오늘' : '');
+
+  let h = '';
+  h += '<div style="margin-bottom:14px;"><div style="font-size:15px;font-weight:700;margin-bottom:8px;">🎯 목표 달성 현황</div>';
+  goals.forEach(function(g, i) {
+    var status = data.goals[i];
+    var sIcon, sText, bg;
+    if (status === true) { sIcon='✅'; sText='달성'; bg='var(--primary-light)'; }
+    else if (status === false) { sIcon='❌'; sText='미달성'; bg='var(--danger-light)'; }
+    else { sIcon='⏳'; sText='기록 중'; bg='#E8EAF6'; }
+    h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;border-radius:10px;background:'+bg+';"><span style="font-size:20px;">'+g.icon+'</span><div style="flex:1;"><div style="font-size:14px;font-weight:600;">'+g.name+'</div><div style="font-size:12px;color:var(--text-sub);">'+g.target+'</div></div><span style="font-size:14px;font-weight:700;">'+sIcon+' '+sText+'</span></div>';
+  });
+  h += '</div>';
+
+  if (data.meals && data.meals.length > 0) {
+    var mealLabels = ['🌅 아침', '☀️ 점심', '🌙 저녁'];
+    h += '<div style="margin-bottom:14px;"><div style="font-size:15px;font-weight:700;margin-bottom:6px;">🍽️ 식사 기록</div>';
+    data.meals.forEach(function(m, i) {
+      if (m) h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;margin-bottom:4px;border-radius:8px;background:#FAFBFC;"><span style="font-size:12px;font-weight:700;color:var(--text-sub);min-width:52px;">'+(mealLabels[i]||'🍴 기타')+'</span><span style="font-size:14px;color:var(--text);">'+m+'</span></div>';
+    });
+    h += '</div>';
+  }
+
+  body.innerHTML = h;
+  panel.style.display = 'block';
+  setTimeout(function(){ panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+
+  document.querySelectorAll('.cal-day').forEach(function(el){ el.style.outline = 'none'; });
+  document.querySelectorAll('.cal-day').forEach(function(el){
+    var num = el.querySelector('.cal-day-num');
+    if (num && parseInt(num.textContent) === day) { el.style.outline = '3px solid #3F51B5'; el.style.outlineOffset = '1px'; }
+  });
+}
+
+function closeDayDetail() {
+  document.getElementById('day-detail').style.display = 'none';
+  document.querySelectorAll('.cal-day').forEach(function(el){ el.style.outline = 'none'; });
+}
+
+renderCalendar();
+</script>
+</body>
+</html>

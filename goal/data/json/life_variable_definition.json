@@ -1,0 +1,152 @@
+[
+    {
+        "measure_name_en": "Sex",
+        "surveys": [
+            {
+                "category": 0,
+                "description": "Man"
+            },
+            {
+                "category": 1,
+                "description": "Woman"
+            }
+        ]
+    },
+    {
+        "measure_name_en": "Education Level",
+        "surveys": [
+            {
+                "category": 0,
+                "description": "중졸미만"
+            },
+            {
+                "category": 1,
+                "description": "중졸~고등학교 재학, 중퇴"
+            },
+            {
+                "category": 2,
+                "description": "고졸~대학교 재학, 중퇴"
+            },
+            {
+                "category": 3,
+                "description": "대학교 졸업"
+            },
+            {
+                "category": 4,
+                "description": "대학원 이상"
+            }
+        ]
+    },
+    {
+        "measure_name_en": "Marital Status",
+        "surveys": [
+            {
+                "category": 0,
+                "description": "미혼"
+            },
+            {
+                "category": 1,
+                "description": "기혼"
+            },
+            {
+                "category": 2,
+                "description": "이혼"
+            },
+            {
+                "category": 3,
+                "description": "별거"
+            },
+            {
+                "category": 4,
+                "description": "사별"
+            }
+        ]
+    },
+    {
+        "measure_name_en": "Household Income",
+        "surveys": [
+            {
+                "category": 0,
+                "description": "300만원미만"
+            },
+            {
+                "category": 1,
+                "description": "300~500만원미만"
+            },
+            {
+                "category": 2,
+                "description": "500~800만원미만"
+            },
+            {
+                "category": 3,
+                "description": "800~1000만원미만"
+            },
+            {
+                "category": 4,
+                "description": "1000~1500만원미만"
+            },
+            {
+                "category": 5,
+                "description": "1500~2000만원미만"
+            },
+            {
+                "category": 6,
+                "description": "2000만원미만"
+            }
+        ]
+    },
+    {
+        "measure_name_en": "Physical activity",
+        "html_name_ko": "신체활동",
+        "id": "L1",
+        "surveys": [
+            {
+                "category": 0,
+                "description": "저강도"
+            },
+            {
+                "category": 1,
+                "description": "중강도"
+            },
+            {
+                "category": 2,
+                "description": "고강도"
+            }
+        ]
+    },
+    {
+        "measure_name_en": "Current smoking",
+        "html_name_ko": "흡연",
+        "id": "L2",
+        "surveys": [
+            {
+                "category": 0,
+                "description": "금연"
+            },
+            {
+                "category": 1,
+                "description": "흡연"
+            }
+        ]
+    },
+    {
+        "measure_name_en": "Alcohol Consumption",
+        "html_name_ko": "음주",
+        "id": "L3",
+        "surveys": [
+            {
+                "category": 0,
+                "description": "적음"
+            },
+            {
+                "category": 1,
+                "description": "보통"
+            },
+            {
+                "category": 2,
+                "description": "많음"
+            }
+        ]
+    }
+]
+    

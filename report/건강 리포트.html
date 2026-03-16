@@ -1,0 +1,1818 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriGo - Premium Health Coach</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="clusterData.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ===== 1. Design Tokens & Reset ===== */
+        :root {
+            --primary: #84cc16; --primary-light: #ecfccb; --primary-dark: #4d7c0f;
+            --secondary: #3b82f6;
+            
+            /* Risk Colors */
+            --c-safe: #22c55e;
+            --c-warn: #f59e0b;
+            --c-dang: #ef4444;
+            
+            /* Backgrounds */
+            --bg-body: #f8fafc; --bg-card: #ffffff;
+            --text-main: #0f172a; --text-sub: #64748b;
+
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --radius-md: 12px; --radius-lg: 20px;
+        }
+
+        [data-theme="dark"] {
+            --bg-body: #0f172a; --bg-card: #1e293b;
+            --text-main: #f8fafc; --text-sub: #94a3b8;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background: var(--bg-body); color: var(--text-main);
+            transition: background 0.3s, color 0.3s; overflow-x: hidden;
+        }
+
+        /* ===== Layout ===== */
+        .app-container { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        .main-content { padding: 40px; max-width: 1400px; margin: 0 auto; width: 100%; padding-bottom: 100px; }
+        
+        .sidebar {
+            background: var(--bg-card); border-right: 1px solid rgba(0,0,0,0.05);
+            padding: 32px 24px; position: sticky; top: 0; height: 100vh;
+            display: flex; flex-direction: column; z-index: 50;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 14px; padding: 16px; margin-bottom: 8px;
+            border-radius: var(--radius-md); color: var(--text-sub); font-weight: 500;
+            cursor: pointer; transition: 0.2s;
+        }
+        .nav-item:hover { background: var(--bg-body); color: var(--text-main); }
+        .nav-item.active { background: var(--primary-light); color: #1a202c; font-weight: 700; }
+        [data-theme="dark"] .nav-item.active { background: #3f6212; color: #fff; }
+
+        /* ===== Components ===== */
+        .card {
+            background: var(--bg-card); border-radius: var(--radius-lg); padding: 24px;
+            box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.03);
+            transition: transform 0.2s; position: relative; overflow: hidden;
+        }
+        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+        .page-header { margin-bottom: 32px; animation: slideDown 0.5s ease; }
+        .page-title { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
+        .page-subtitle { color: var(--text-sub); font-size: 14px; }
+        .section { display: none; animation: fadeIn 0.4s ease forwards; }
+        .section.active { display: block; }
+
+        /* ===== Dashboard Grid & Range ===== */
+        .health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
+        .range-card {
+            background: var(--bg-card); padding: 24px; border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.03);
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .rc-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .rc-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--bg-body); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .rc-title { font-size: 14px; color: var(--text-sub); font-weight: 600; margin-top: 4px; }
+        .rc-value { font-size: 28px; font-weight: 800; color: var(--text-main); line-height: 1; }
+        .rc-unit { font-size: 13px; color: var(--text-sub); margin-left: 2px; }
+        
+        .range-container { position: relative; margin-top: 8px; }
+        .range-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-sub); margin-bottom: 6px; }
+        .range-track { height: 10px; border-radius: 5px; background: #e2e8f0; position: relative; overflow: hidden; }
+        .track-bmi { background: linear-gradient(90deg, var(--c-safe) 0%, var(--c-safe) 50%, var(--c-warn) 50%, var(--c-warn) 75%, var(--c-dang) 75%); }
+        .track-bp { background: linear-gradient(90deg, var(--c-safe) 0%, var(--c-safe) 60%, var(--c-warn) 60%, var(--c-warn) 80%, var(--c-dang) 80%); }
+        .current-marker { position: absolute; top: -3px; width: 4px; height: 16px; background: #000; border: 1px solid #fff; border-radius: 4px; transform: translateX(-50%); z-index: 2; }
+        .range-msg { font-size: 12px; font-weight: 600; margin-top: 8px; text-align: right; }
+        .msg-warn { color: var(--c-warn); } .msg-dang { color: var(--c-dang); }
+
+        /* ===== Food Diary ===== */
+        .row-diary { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px; }
+        .macro-grid { display: flex; gap: 20px; justify-content: space-around; margin-top: 10px; }
+        .macro-item { display: flex; flex-direction: column; align-items: center; }
+        .macro-ring { width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: relative; }
+        .macro-ring::before { content: ''; position: absolute; width: 56px; height: 56px; background: var(--bg-card); border-radius: 50%; }
+        .macro-val { position: relative; font-size: 14px; font-weight: 700; z-index: 1; }
+        .macro-label { font-size: 12px; color: var(--text-sub); margin-top: 8px; font-weight: 500; }
+        
+        .timeline { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .tl-item { display: flex; gap: 16px; align-items: center; padding: 12px; border-radius: 12px; transition: 0.2s; }
+        .tl-item:hover { background: var(--bg-body); }
+        .tl-time { font-size: 12px; color: var(--text-sub); width: 40px; text-align: right; font-weight: 600; }
+        .tl-dot { width: 10px; height: 10px; border-radius: 50%; background: #e2e8f0; position: relative; }
+        .tl-dot::after { content:''; position: absolute; top: 10px; left: 4px; width: 2px; height: 35px; background: #e2e8f0; }
+        .tl-item:last-child .tl-dot::after { display: none; }
+        .tl-content { flex: 1; display: flex; justify-content: space-between; align-items: center; }
+        .tl-menu { font-size: 14px; font-weight: 600; }
+        .tl-cal { font-size: 12px; color: var(--text-sub); margin-top: 2px; }
+        .tl-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 500; }
+        .tag-morning { background: #fef9c3; color: #854d0e; }
+        .tag-lunch { background: #dcfce7; color: #166534; }
+        .tag-snack { background: #f3e8ff; color: #6b21a8; }
+        .tag-breakfast { background: #fef9c3; color: #854d0e; }
+        .tag-dinner { background: #fed7aa; color: #9a3412; }
+
+        /* ===== Goals & Calendar ===== */
+        .goal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 32px; }
+        .goal-card { background: var(--bg-card); padding: 24px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); border: 1px solid rgba(0,0,0,0.03); }
+        .goal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .goal-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--bg-body); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .streak-badge { background: linear-gradient(135deg, #ffedd5, #fff7ed); color: #c2410c; padding: 6px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; border: 1px solid #ffedd5; }
+        .goal-progress { height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; margin-top: 12px; }
+        .goal-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        
+        /* Calendar Grid */
+        .calendar-container { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+        .calendar-header { text-align: center; font-size: 12px; font-weight: 700; color: var(--text-sub); padding: 12px 0; }
+        .calendar-day {
+            aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+            background: var(--bg-card); border: 2px solid transparent; transition: 0.2s;
+        }
+        .calendar-day:hover { border-color: var(--primary); transform: scale(1.05); }
+        .calendar-day.success { background: #dcfce7; border-color: #22c55e; }
+        .calendar-day.partial { background: #fef3c7; border-color: #f59e0b; }
+        .calendar-day.failed { background: #fee2e2; border-color: #ef4444; }
+        .day-status { font-size: 10px; margin-top: 4px; font-weight: 500; }
+
+        /* ===== Modal ===== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); z-index: 1000; display: none;
+            align-items: center; justify-content: center; animation: fadeIn 0.2s;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: var(--bg-card); border-radius: 24px; width: 90%; max-width: 700px;
+            max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
+        }
+        .modal-header {
+            padding: 24px 32px; border-bottom: 1px solid #e2e8f0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-title { font-size: 20px; font-weight: 800; }
+        .modal-close {
+            width: 32px; height: 32px; border-radius: 50%; background: var(--bg-body);
+            border: none; cursor: pointer; font-size: 18px; transition: 0.2s;
+        }
+        .modal-close:hover { background: #e2e8f0; transform: rotate(90deg); }
+        .modal-body { padding: 32px; }
+        
+        .goal-status-summary { display: flex; gap: 12px; margin-bottom: 32px; }
+        .status-box {
+            flex: 1; padding: 16px; border-radius: 12px; text-align: center;
+            border: 2px solid transparent; transition: 0.2s;
+        }
+        .status-box.success { background: #dcfce7; border-color: #22c55e; }
+        .status-box.partial { background: #fef3c7; border-color: #f59e0b; }
+        .status-box.failed { background: #fee2e2; border-color: #ef4444; }
+        .status-number { font-size: 24px; margin-bottom: 4px; }
+        .status-label { font-size: 12px; font-weight: 600; color: var(--text-main); }
+        
+        .section-title {
+            font-size: 16px; font-weight: 700; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .timeline-item { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+        .timeline-time { font-size: 13px; font-weight: 700; color: var(--text-sub); min-width: 50px; }
+        .timeline-content { flex: 1; }
+        .meal-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+        .meal-stats { font-size: 12px; color: var(--text-sub); }
+        .meal-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 500; }
+        
+        .goal-detail-section { margin-top: 32px; }
+        .goal-detail-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; background: var(--bg-body); border-radius: 8px; margin-bottom: 8px;
+        }
+        .goal-detail-label { font-size: 13px; font-weight: 600; }
+        .goal-detail-value { font-size: 13px; font-weight: 700; }
+        .value-success { color: var(--c-safe); }
+        .value-warning { color: var(--c-warn); }
+        .value-danger { color: var(--c-dang); }
+
+        /* ===== 📈 IMPROVED ANALYSIS STYLES ===== */
+        .row-analysis { display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px; margin-bottom: 24px; }
+
+        /* MetS Selector */
+        .mets-tabs { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 24px; scroll-behavior: smooth; }
+        .mets-tab {
+            min-width: 110px; padding: 16px; background: var(--bg-card); border-radius: 16px; 
+            text-align: center; cursor: pointer; border: 2px solid transparent; flex: 1;
+            box-shadow: var(--shadow-sm); transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .mets-tab:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+        .mets-tab.active { border-color: var(--primary); background: #f7fee7; }
+        .mets-tab.active .tab-status { font-weight: 800; }
+        
+        .tab-icon { font-size: 24px; margin-bottom: 8px; display: block; }
+        .tab-label { font-size: 13px; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px; }
+        .tab-status { font-size: 11px; font-weight: 600; display: inline-block; padding: 2px 8px; border-radius: 10px; }
+        .status-danger { color: #ef4444; background: #fee2e2; }
+        .status-warn { color: #f59e0b; background: #fef3c7; }
+        .status-safe { color: #22c55e; background: #dcfce7; }
+
+        /* Risk Gauge Card */
+        .risk-gauge-container { display: flex; flex-direction: column; align-items: center; margin: 20px 0; }
+        .risk-bar { width: 100%; height: 12px; background: linear-gradient(90deg, #22c55e 33%, #f59e0b 33%, #f59e0b 66%, #ef4444 66%); border-radius: 6px; position: relative; margin-top: 10px; }
+        .risk-pointer {
+            position: absolute; top: -6px; width: 0; height: 0; 
+            border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 8px solid var(--text-main);
+            transform: translateX(-50%); transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .risk-labels { display: flex; justify-content: space-between; width: 100%; font-size: 11px; color: var(--text-sub); margin-top: 6px; }
+        .risk-number-display { font-size: 48px; font-weight: 800; color: var(--text-main); line-height: 1.2; }
+        .risk-desc-display { font-size: 14px; color: var(--text-sub); font-weight: 500; margin-bottom: 12px; }
+
+        .aor-box { background: var(--bg-body); padding: 16px; border-radius: 12px; width: 100%; margin-top: 12px; border-left: 4px solid #ef4444; }
+        .aor-title { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+        .aor-value { font-size: 20px; font-weight: 800; color: #ef4444; }
+
+        /* SHAP Drivers */
+        .driver-list { display: flex; flex-direction: column; gap: 16px; }
+        .driver-item { display: flex; flex-direction: column; gap: 6px; }
+        .driver-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--text-main); }
+        .driver-bar-bg { width: 100%; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+        .driver-bar-fill { height: 100%; border-radius: 4px; background: var(--primary); transition: width 0.8s ease; }
+        .driver-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: #e0f2fe; color: #0284c7; margin-left: 6px; font-weight: 500; }
+        
+        /* Insight Card */
+        .insight-card {
+            background: linear-gradient(135deg, #4d7c0f, #65a30d); color: white;
+            border-radius: var(--radius-lg); padding: 24px; position: relative;
+            box-shadow: 0 10px 20px rgba(77, 124, 15, 0.2); margin-bottom: 24px;
+            display: flex; align-items: center; gap: 20px;
+        }
+        .insight-icon { font-size: 32px; background: rgba(255,255,255,0.2); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .insight-text { font-size: 15px; line-height: 1.5; font-weight: 500; }
+        .insight-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; margin-bottom: 4px; font-weight: 700; }
+
+        /* Common */
+        .row-2-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        @media (max-width: 1024px) {
+            .app-container { display: block; }
+            .sidebar { display: none; }
+            .health-grid, .row-diary, .row-2-col, .row-analysis { grid-template-columns: 1fr; }
+            .insight-card { flex-direction: column; text-align: center; }
+        }
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-card); padding: 12px 24px; border-top: 1px solid #eee; justify-content: space-between; z-index: 100; }
+        .b-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; color: var(--text-sub); font-size: 11px; font-weight: 600; }
+        .b-item.active { color: var(--primary); }
+        @media (max-width: 1024px) { .bottom-nav { display: flex; } }
+        
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
+        /* PDF Download Button */
+        .pdf-download-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 12px 24px; background: linear-gradient(135deg, #84cc16, #65a30d);
+            color: white; font-weight: 700; font-size: 14px;
+            border: none; border-radius: 12px; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(132, 204, 22, 0.3);
+            transition: all 0.3s ease;
+            position: relative; overflow: hidden;
+        }
+        .pdf-download-btn:hover {
+            background: linear-gradient(135deg, #65a30d, #4d7c0f);
+            box-shadow: 0 6px 20px rgba(132, 204, 22, 0.4);
+            transform: translateY(-2px);
+        }
+        .pdf-download-btn:active {
+            transform: translateY(0);
+        }
+        .pdf-download-btn::before {
+            content: '';
+            position: absolute; top: 50%; left: 50%;
+            width: 0; height: 0; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        .pdf-download-btn:hover::before {
+            width: 300px; height: 300px;
+        }
+        .pdf-icon { font-size: 18px; }
+        
+        /* Page Header 수정 */
+        .page-header {
+            margin-bottom: 32px;
+            animation: slideDown 0.5s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .page-header-text {
+            flex: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+        }
+
+    </style>
+
+</head>
+<body data-theme="light">
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div style="font-size: 24px; font-weight: 800; margin-bottom: 40px; display: flex; align-items: center; gap: 10px;">
+                <span>🥗</span> <span>NutriGo</span>
+            </div>
+            <nav>
+                <div class="nav-item active" onclick="switchTab('dashboard')">📊 대시보드</div>
+                <div class="nav-item" onclick="switchTab('food-diary')">📸 식단 기록</div>
+                <div class="nav-item" onclick="switchTab('calendar')">🎯 목표 관리</div>
+                <div class="nav-item" onclick="switchTab('progress')">📈 건강 리포트</div>
+                <!-- <div class="nav-item" onclick="switchTab('settings')">⚙️ 데이터 설정</div> -->
+            </nav>
+            <button onclick="toggleTheme()" style="margin-top:auto; padding:12px; border:1px solid #ddd; background:transparent; border-radius:12px; cursor:pointer; color:var(--text-main);">🌙 테마 변경</button>
+        </aside>
+
+        <main class="main-content">
+            
+            <!-- ========== DASHBOARD SECTION ========== -->
+            <section id="dashboard" class="section active">
+                <div class="page-header">
+                    <div class="page-header-text">
+                        <h1 class="page-title">안녕하세요, 희정님! 👋</h1>
+                        <p class="page-subtitle">오늘의 건강 지표와 적정 구간을 확인하세요.</p>
+                    </div>
+                    <button class="pdf-download-btn" onclick="generateHealthHTML()">
+                        <span class="pdf-icon">📄</span>
+                        <span>건강 리포트 다운로드</span>
+                    </button>
+                </div>
+                <div class="health-grid">
+                    <div class="range-card">
+                        <div class="rc-header"><div><div class="rc-icon">⚖️</div><div class="rc-title">체중 (BMI)</div></div><div style="text-align:right;"><div class="rc-value" data-target="65">0<span class="rc-unit">kg</span></div></div></div>
+                        <div class="range-container"><div class="range-labels"><span>저체중</span><span>정상</span><span>비만</span></div><div class="range-track track-bmi"><div class="current-marker" style="left: 70%;"></div></div><div class="range-msg msg-warn">과체중 구간입니다.</div></div>
+                    </div>
+                    <div class="range-card">
+                        <div class="rc-header"><div><div class="rc-icon">📏</div><div class="rc-title">허리둘레</div></div><div style="text-align:right;"><div class="rc-value" data-target="85">0<span class="rc-unit">cm</span></div></div></div>
+                        <div class="range-container"><div class="range-labels"><span>정상</span><span>경계</span><span>위험</span></div><div class="range-track track-bmi"><div class="current-marker" style="left: 80%;"></div></div><div class="range-msg msg-warn">경계 단계입니다.</div></div>
+                    </div>
+                    <div class="range-card">
+                        <div class="rc-header"><div><div class="rc-icon">🩸</div><div class="rc-title">공복혈당</div></div><div style="text-align:right;"><div class="rc-value" data-target="105">0<span class="rc-unit">mg/dL</span></div></div></div>
+                        <div class="range-container"><div class="range-labels"><span>정상</span><span>전단계</span><span>당뇨</span></div><div class="range-track track-bp"><div class="current-marker" style="left: 65%;"></div></div><div class="range-msg msg-warn">주의가 필요합니다.</div></div>
+                    </div>
+                    <div class="range-card">
+                        <div class="rc-header"><div><div class="rc-icon">💓</div><div class="rc-title">수축기 혈압</div></div><div style="text-align:right;"><div class="rc-value" data-target="138">0<span class="rc-unit">mmHg</span></div></div></div>
+                        <div class="range-container"><div class="range-labels"><span>정상</span><span>주의</span><span>고혈압</span></div><div class="range-track track-bp"><div class="current-marker" style="left: 85%;"></div></div><div class="range-msg msg-dang">고혈압 전단계입니다.</div></div>
+                    </div>
+                    <div class="range-card">
+                        <div class="rc-header"><div><div class="rc-icon">🔥</div><div class="rc-title">중성지방</div></div><div style="text-align:right;"><div class="rc-value" data-target="180">0<span class="rc-unit">mg/dL</span></div></div></div>
+                        <div class="range-container"><div class="range-labels"><span>정상</span><span>경계</span><span>위험</span></div><div class="range-track track-bp"><div class="current-marker" style="left: 75%;"></div></div><div class="range-msg msg-dang">정상 수치를 초과했습니다.</div></div>
+                    </div>
+                </div>
+                <div class="row-2-col">
+                    <div class="card" style="display:flex; flex-direction:column; align-items:center;">
+                        <h3 style="margin-bottom:20px; font-weight:700;">💧 수분 섭취</h3>
+                        <div style="width:160px; height:160px; border-radius:50%; background:conic-gradient(#3b82f6 65%, #f1f5f9 0); display:flex; align-items:center; justify-content:center;">
+                            <div style="width:130px; height:130px; background:var(--bg-card); border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                <span style="font-size:32px; font-weight:800; color:#3b82f6;">1.3L</span>
+                                <span style="font-size:12px; color:var(--text-sub); margin-top:4px;">/ 2.0L</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 style="margin-bottom:20px; font-weight:700;">🔥 칼로리 분석</h3>
+                        <div style="display:flex; gap:20px; align-items:center;">
+                            <div style="width:120px; height:120px;"><canvas id="calorieChart"></canvas></div>
+                            <div style="flex:1;">
+                                <div style="margin-bottom:8px; font-size:12px;">탄수화물 <div style="height:6px; background:#f1f5f9; border-radius:3px; margin-top:4px;"><div style="width:80%; height:100%; background:#f59e0b; border-radius:3px;"></div></div></div>
+                                <div style="margin-bottom:8px; font-size:12px;">단백질 <div style="height:6px; background:#f1f5f9; border-radius:3px; margin-top:4px;"><div style="width:70%; height:100%; background:#ef4444; border-radius:3px;"></div></div></div>
+                                <div style="font-size:12px;">지방 <div style="height:6px; background:#f1f5f9; border-radius:3px; margin-top:4px;"><div style="width:40%; height:100%; background:#84cc16; border-radius:3px;"></div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== FOOD DIARY SECTION ========== -->
+            <section id="food-diary" class="section">
+                <div class="page-header"><h1 class="page-title">식단 기록 📸</h1><p class="page-subtitle">오늘의 식사를 기록하고 영양소를 확인하세요</p></div>
+                <div class="row-diary">
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="font-weight:700;">오늘의 식사 (Timeline)</h3><span style="font-size:12px; color:var(--text-sub);">560 kcal 섭취</span>
+                        </div>
+                        <div class="timeline">
+                            <div class="tl-item">
+                                <div class="tl-time">08:30</div>
+                                <div class="tl-dot"></div>
+                                <div class="tl-content">
+                                    <div>
+                                        <div class="tl-menu">토스트 & 계란 <span class="tl-tag tag-morning">아침</span></div>
+                                        <div class="tl-cal">320 kcal / 탄수 45g</div>
+                                    </div>
+                                    <div style="font-size:18px;">🍞</div>
+                                </div>
+                            </div>
+                            <div class="tl-item">
+                                <div class="tl-time">10:30</div>
+                                <div class="tl-dot"></div>
+                                <div class="tl-content">
+                                    <div>
+                                        <div class="tl-menu">바나나 1개 <span class="tl-tag tag-snack">간식</span></div>
+                                        <div class="tl-cal">105 kcal / 탄수 27g</div>
+                                    </div>
+                                    <div style="font-size:18px;">🍌</div>
+                                </div>
+                            </div>
+                            <div class="tl-item">
+                                <div class="tl-time">12:45</div>
+                                <div class="tl-dot"></div>
+                                <div class="tl-content">
+                                    <div>
+                                        <div class="tl-menu">전주 비빔밥 <span class="tl-tag tag-lunch">점심</span></div>
+                                        <div class="tl-cal">520 kcal / 탄수 78g</div>
+                                    </div>
+                                    <div style="font-size:18px;">🍚</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:24px;">
+                        <div class="card">
+                            <h3 style="font-weight:700; margin-bottom:16px;">영양소 비율</h3>
+                            <div class="macro-grid">
+                                <div class="macro-item"><div class="macro-ring" style="background: conic-gradient(#f59e0b 80%, #f1f5f9 0);"><span class="macro-val" style="color:#b45309">120g</span></div><span class="macro-label">탄수화물</span></div>
+                                <div class="macro-item"><div class="macro-ring" style="background: conic-gradient(#ef4444 70%, #f1f5f9 0);"><span class="macro-val" style="color:#b91c1c">70g</span></div><span class="macro-label">단백질</span></div>
+                                <div class="macro-item"><div class="macro-ring" style="background: conic-gradient(#84cc16 40%, #f1f5f9 0);"><span class="macro-val" style="color:#4d7c0f">20g</span></div><span class="macro-label">지방</span></div>
+                            </div>
+                        </div>
+                        <div class="card" style="border: 2px dashed #cbd5e1; text-align: center; padding: 30px; cursor: pointer; flex:1; display:flex; flex-direction:column; justify-content:center;"><div style="font-size: 32px; margin-bottom: 8px;">📤</div><h3 style="font-size:16px; font-weight: 700;">사진 업로드</h3><p style="color: var(--text-sub); font-size: 13px;">AI 분석 시작하기</p></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== GOALS & CALENDAR SECTION ========== -->
+            <section id="calendar" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">나의 목표 🎯</h1>
+                    <p class="page-subtitle">우선순위 높은 목표를 달성해보세요</p>
+                </div>
+
+                <!-- Goal Cards -->
+                <div class="goal-grid">
+                    <div class="goal-card">
+                        <div class="goal-header">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="goal-icon">🍟</div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 15px;">튀김/부침 줄이기</div>
+                                    <div style="font-size: 12px; color: var(--text-sub);">주 2회 이하 목표</div>
+                                </div>
+                            </div>
+                            <div class="streak-badge">🔥 연속 5일</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                            <span>현재 5회</span>
+                            <span style="color: var(--danger);">30% 달성</span>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-fill" style="width: 30%; background: var(--danger);"></div>
+                        </div>
+                    </div>
+
+                    <div class="goal-card">
+                        <div class="goal-header">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="goal-icon">🍔</div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 15px;">가공식품 줄이기</div>
+                                    <div style="font-size: 12px; color: var(--text-sub);">주 3회 이하 목표</div>
+                                </div>
+                            </div>
+                            <div class="streak-badge" style="background: #fff7ed; color: #ea580c;">⚠️ 개선중</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                            <span>현재 6회</span>
+                            <span style="color: var(--warning);">50% 달성</span>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-fill" style="width: 50%; background: var(--warning);"></div>
+                        </div>
+                    </div>
+
+                    <div class="goal-card">
+                        <div class="goal-header">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="goal-icon">🥦</div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 15px;">채소 섭취 늘리기</div>
+                                    <div style="font-size: 12px; color: var(--text-sub);">주 14회 이상 목표</div>
+                                </div>
+                            </div>
+                            <div class="streak-badge" style="background: #dcfce7; color: #166534;">✅ 우수</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; margin-bottom: 8px;">
+                            <span>현재 12회</span>
+                            <span style="color: var(--success);">86% 달성</span>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-fill" style="width: 86%; background: var(--success);"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar -->
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3 style="font-weight: 700; font-size: 18px;">2026년 1월</h3>
+                        <div style="display: flex; gap: 16px; font-size: 13px; font-weight: 600;">
+                            <span style="color: var(--success);">✅ 달성 15일</span>
+                            <span style="color: var(--danger);">❌ 미달성 3일</span>
+                        </div>
+                    </div>
+
+                    <div class="calendar-container">
+                        <div class="calendar-header">일</div>
+                        <div class="calendar-header">월</div>
+                        <div class="calendar-header">화</div>
+                        <div class="calendar-header">수</div>
+                        <div class="calendar-header">목</div>
+                        <div class="calendar-header">금</div>
+                        <div class="calendar-header">토</div>
+
+                        <div class="calendar-day"></div>
+                        <div class="calendar-day"></div>
+                        <div class="calendar-day"></div>
+
+                        <div class="calendar-day success" onclick="openDayModal('2026-01-01')">1<span class="day-status">✅ 3/3</span></div>
+                        <div class="calendar-day success" onclick="openDayModal('2026-01-02')">2<span class="day-status">✅ 3/3</span></div>
+                        <div class="calendar-day partial" onclick="openDayModal('2026-01-03')">3<span class="day-status">⚠️ 2/3</span></div>
+                        <div class="calendar-day success" onclick="openDayModal('2026-01-04')">4<span class="day-status">✅ 3/3</span></div>
+                        <div class="calendar-day failed" onclick="openDayModal('2026-01-05')">5<span class="day-status">❌ 1/3</span></div>
+                        <div class="calendar-day success" onclick="openDayModal('2026-01-06')">6<span class="day-status">✅ 3/3</span></div>
+                        <div class="calendar-day">7</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========== PROGRESS SECTION ========== -->
+            <section id="progress" class="section">
+                <div class="page-header">
+                    <h1 class="page-title">건강 리포트 📈</h1>
+                    <p class="page-subtitle">MetS 종합 및 지표별 상세 위험도 분석</p>
+                </div>
+
+                <!-- MetS 전체 종합 분석 -->
+                <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 16px; padding: 24px; margin-bottom: 32px; border: 2px solid #fbbf24;">
+                    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 24px;">🎯</span>
+                        <span>MetS 전체 종합 분석</span>
+                    </h2>
+
+                    <div class="row-analysis">
+                        <div class="card">
+                            <h3 style="font-weight: 700; margin-bottom: 20px;">식습관 클러스터 분석</h3>
+                            
+                            <div class="risk-gauge-container">
+                                <div class="risk-desc-display" id="overallClusterSubtitle">MetS 전체 기준</div>
+                                <div class="risk-number-display" id="overallClusterNumber">3</div>
+                                <div style="font-size:13px; font-weight:600; color:#ef4444; margin-bottom:8px;" id="overallClusterDescription">복합 대사증후군 고위험군</div>
+                                
+                                <div style="width:100%; position:relative; padding-top:10px;">
+                                    <div class="risk-labels"><span>안전(1)</span><span>주의(2)</span><span>위험(3)</span></div>
+                                    <div class="risk-bar">
+                                        <div id="overallRiskPointer" class="risk-pointer" style="left: 88%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="aor-box">
+                                <div class="aor-title">조정 교차비 (AOR)</div>
+                                <div class="aor-value" id="overallAorContainer">4.2배</div>
+                                <div style="font-size:11px; color:var(--text-sub); margin-top:4px;">*Cluster 1(건강군) 대비 위험도</div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3 style="font-weight: 700; margin-bottom: 20px;">주요 위험 요인 (SHAP)</h3>
+                            <div id="overallShapContainer" class="driver-list"></div>
+                        </div>
+                    </div>
+
+                    <div class="insight-card">
+                        <div class="insight-icon">💡</div>
+                        <div>
+                            <div class="insight-label">AI Action Plan</div>
+                            <div class="insight-text" id="overallShapInsightText">
+                                전반적인 식습관 개선이 필요합니다. 튀김·가공식품 줄이기, 채소·통곡물 늘리기, 규칙적인 운동을 병행하세요.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 19개 식습관 종합 평가 -->
+                <div class="card" style="margin-bottom: 32px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                        <h3 style="font-weight: 700;">19개 식습관 종합 평가</h3>
+                        <div style="display:flex; gap:12px; font-size:12px;">
+                            <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; background:#ef4444; border-radius:50%;"></span> 위험(허브식품)</span>
+                            <span style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; background:#84cc16; border-radius:50%;"></span> 나의 식습관</span>
+                        </div>
+                    </div>
+                    <div style="height: 450px; width: 100%;">
+                        <canvas id="foodHabitsSpider"></canvas>
+                    </div>
+                </div>
+
+                <!-- MetS 개별 지표 분석 -->
+                <div style="margin-top: 32px;">
+                    <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 24px;">📊</span>
+                        <span>MetS 개별 지표 상세 분석</span>
+                    </h2>
+
+                    <div class="mets-tabs">
+                        <div class="mets-tab active" data-mets="waist">
+                            <span class="tab-icon">📏</span><span class="tab-label">허리둘레</span><span class="tab-status status-danger">위험</span>
+                        </div>
+                        <div class="mets-tab" data-mets="bp">
+                            <span class="tab-icon">💉</span><span class="tab-label">혈압</span><span class="tab-status status-danger">위험</span>
+                        </div>
+                        <div class="mets-tab" data-mets="glucose">
+                            <span class="tab-icon">🩸</span><span class="tab-label">공복혈당</span><span class="tab-status status-warn">주의</span>
+                        </div>
+                        <div class="mets-tab" data-mets="tg">
+                            <span class="tab-icon">🧪</span><span class="tab-label">중성지방</span><span class="tab-status status-danger">위험</span>
+                        </div>
+                        <div class="mets-tab" data-mets="hdl">
+                            <span class="tab-icon">💊</span><span class="tab-label">HDL-C</span><span class="tab-status status-danger">위험</span>
+                        </div>
+                    </div>
+
+                    <div class="row-analysis">
+                        <div class="card">
+                            <h3 style="font-weight: 700; margin-bottom: 20px;">식습관 클러스터 분석</h3>
+                            
+                            <div class="risk-gauge-container">
+                                <div class="risk-desc-display" id="dietClusterSubtitle">허리둘레 기준</div>
+                                <div class="risk-number-display" id="dietClusterNumber">3</div>
+                                <div style="font-size:13px; font-weight:600; color:#ef4444; margin-bottom:8px;" id="dietClusterDescription">고위험 식습관 패턴</div>
+                                
+                                <div style="width:100%; position:relative; padding-top:10px;">
+                                    <div class="risk-labels"><span>안전(1)</span><span>주의(2)</span><span>위험(3)</span></div>
+                                    <div class="risk-bar">
+                                        <div id="riskPointer" class="risk-pointer" style="left: 83%;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="aor-box">
+                                <div class="aor-title">조정 교차비 (AOR)</div>
+                                <div class="aor-value" id="aorContainer">2.8배</div>
+                                <div style="font-size:11px; color:var(--text-sub); margin-top:4px;">*Cluster 1(건강군) 대비 위험도</div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3 style="font-weight: 700; margin-bottom: 20px;">주요 위험 요인 (SHAP)</h3>
+                            <div id="shapContainer" class="driver-list"></div>
+                        </div>
+                    </div>
+
+                    <div class="insight-card">
+                        <div class="insight-icon">💡</div>
+                        <div>
+                            <div class="insight-label">AI Action Plan</div>
+                            <div class="insight-text" id="shapInsightText">
+                                식습관가 가장 큰 영향(85%)을 미치므로 식습관 개선이 최우선입니다. 튀김 섭취를 주 1회로 줄이세요.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>            
+
+        </main>
+    </div>
+
+    <!-- ========== MODAL ========== -->
+    <div class="modal-overlay" id="dayModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">2026년 1월 1일</h2>
+                <button class="modal-close" onclick="closeDayModal()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Goal Status Summary -->
+                <div class="goal-status-summary">
+                    <div class="status-box success">
+                        <div class="status-number">✅</div>
+                        <div class="status-label">튀김 줄이기</div>
+                    </div>
+                    <div class="status-box success">
+                        <div class="status-number">✅</div>
+                        <div class="status-label">가공식품 줄이기</div>
+                    </div>
+                    <div class="status-box success">
+                        <div class="status-number">✅</div>
+                        <div class="status-label">채소 늘리기</div>
+                    </div>
+                </div>
+
+                <!-- Meal Timeline -->
+                <div class="meal-timeline">
+                    <h3 class="section-title">
+                        <span>🍽️</span>
+                        <span>식사 기록</span>
+                    </h3>
+
+                    <div class="timeline-item">
+                        <div class="timeline-time">08:30</div>
+                        <div class="timeline-content">
+                            <div class="meal-name">
+                                토스트 & 계란
+                                <span class="meal-tag tag-breakfast">아침</span>
+                            </div>
+                            <div class="meal-stats">320 kcal · 탄수화물 45g · 단백질 15g · 지방 10g</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-time">10:30</div>
+                        <div class="timeline-content">
+                            <div class="meal-name">
+                                바나나 1개
+                                <span class="meal-tag tag-snack">간식</span>
+                            </div>
+                            <div class="meal-stats">105 kcal · 탄수화물 27g · 단백질 1g</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-time">12:45</div>
+                        <div class="timeline-content">
+                            <div class="meal-name">
+                                비빔밥
+                                <span class="meal-tag tag-lunch">점심</span>
+                            </div>
+                            <div class="meal-stats">520 kcal · 탄수화물 78g · 단백질 20g · 지방 15g</div>
+                        </div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-time">19:00</div>
+                        <div class="timeline-content">
+                            <div class="meal-name">
+                                구운 닭가슴살 샐러드
+                                <span class="meal-tag tag-dinner">저녁</span>
+                            </div>
+                            <div class="meal-stats">380 kcal · 탄수화물 25g · 단백질 35g · 지방 12g</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Goal Details -->
+                <div class="goal-detail-section">
+                    <h3 class="section-title">
+                        <span>🎯</span>
+                        <span>목표 달성 상세</span>
+                    </h3>
+
+                    <div class="goal-detail-item">
+                        <div class="goal-detail-label">🍟 튀김/부침 섭취</div>
+                        <div class="goal-detail-value value-success">0회 (목표 0회) ✅</div>
+                    </div>
+
+                    <div class="goal-detail-item">
+                        <div class="goal-detail-label">🍔 가공식품 섭취</div>
+                        <div class="goal-detail-value value-success">0회 (목표 0회) ✅</div>
+                    </div>
+
+                    <div class="goal-detail-item">
+                        <div class="goal-detail-label">🥦 채소 섭취</div>
+                        <div class="goal-detail-value value-success">3회 (목표 2회) ✅</div>
+                    </div>
+
+                    <div class="goal-detail-item">
+                        <div class="goal-detail-label">💧 물 섭취</div>
+                        <div class="goal-detail-value value-success">2.0L (목표 2.0L) ✅</div>
+                    </div>
+
+                    <div class="goal-detail-item">
+                        <div class="goal-detail-label">🔥 총 칼로리</div>
+                        <div class="goal-detail-value value-success">1,325 kcal (목표 1,800 kcal)</div>
+                    </div>
+                </div>
+
+                <!-- Daily Note -->
+                <div style="background: #f8fafc; padding: 16px; border-radius: 12px; margin-top: 20px;">
+                    <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                        <span>💡</span>
+                        <span>AI 코치 피드백</span>
+                    </div>
+                    <div style="font-size: 13px; color: var(--text-sub); line-height: 1.6;">
+                        오늘은 모든 목표를 달성하셨네요! 특히 튀김/가공식품을 전혀 섭취하지 않고, 채소를 목표보다 더 많이 드신 점이 훌륭합니다. 이 패턴을 유지하세요!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="b-item active" onclick="switchTab('dashboard')"><span style="font-size:18px;">📊</span><span>홈</span></div>
+        <div class="b-item" onclick="switchTab('food-diary')"><span style="font-size:18px;">📸</span><span>기록</span></div>
+        <div class="b-item" onclick="switchTab('calendar')"><span style="font-size:18px;">🎯</span><span>목표</span></div>
+        <div class="b-item" onclick="switchTab('progress')"><span style="font-size:18px;">📈</span><span>분석</span></div>
+    </nav>
+
+    <script>
+        // Navigation
+        function switchTab(t){
+            document.querySelectorAll('.section').forEach(e=>e.classList.remove('active'));
+            document.getElementById(t).classList.add('active');
+            document.querySelectorAll('.nav-item, .b-item').forEach(e=>e.classList.remove('active'));
+            const i={'dashboard':0,'food-diary':1,'calendar':2,'progress':3}[t];
+            if(document.querySelectorAll('.nav-item')[i])document.querySelectorAll('.nav-item')[i].classList.add('active');
+            if(document.querySelectorAll('.b-item')[i])document.querySelectorAll('.b-item')[i].classList.add('active');
+            if(t==='dashboard')animateNumbers();
+        }
+
+        // Animate Dashboard Numbers
+        function animateNumbers(){
+            document.querySelectorAll('.rc-value').forEach(v=>{
+                const t=+v.getAttribute('data-target'),u=v.querySelector('.rc-unit').outerHTML;
+                let c=0,inc=t/20;
+                const upd=()=>{c+=inc;if(c<t){v.innerHTML=Math.ceil(c)+u;requestAnimationFrame(upd)}else{v.innerHTML=t+u}};
+                upd()
+            })
+        }
+
+        // Theme Toggle
+        function toggleTheme(){
+            const b=document.body;
+            b.setAttribute('data-theme',b.getAttribute('data-theme')==='dark'?'light':'dark')
+        }
+        
+        // MetS Data
+        // MetS Data - 기본값
+        const metsData={
+            overall:{
+                name:'MetS 전체', cluster:3, desc:clusterDatabase.overall[3].desc, aor:clusterDatabase.overall[3].aor+'배', pos:'88%',
+                shap:[{l:'식습관',v:0.82,tag:'Actionable'},{l:'신체활동',v:0.68,tag:'Actionable'},{l:'흡연',v:0.55,tag:'Non-mod'},{l:'음주',v:0.38,tag:'Actionable'}],
+                insight:clusterDatabase.overall[3].insight
+            },
+            waist:{
+                name:'허리둘레', cluster:3, desc:clusterDatabase.waist[3].desc, aor:clusterDatabase.waist[3].aor+'배', pos:'83%',
+                shap:[{l:'식습관',v:0.85,tag:'Actionable'},{l:'신체활동',v:0.62,tag:'Actionable'},{l:'음주',v:0.45,tag:'Actionable'},{l:'연령',v:0.28,tag:'Non-mod'}],
+                insight:clusterDatabase.waist[3].insight
+            },
+            bp:{
+                name:'혈압', cluster:3, desc:clusterDatabase.bp[3].desc, aor:clusterDatabase.bp[3].aor+'배', pos:'83%',
+                shap:[{l:'식습관',v:0.78,tag:'Actionable'},{l:'신체활동',v:0.68,tag:'Actionable'},{l:'연령',v:0.52,tag:'Non-mod'},{l:'나트륨',v:0.31,tag:'Actionable'}],
+                insight:clusterDatabase.bp[3].insight
+            },
+            glucose:{
+                name:'공복혈당', cluster:2, desc:clusterDatabase.glucose[2].desc, aor:clusterDatabase.glucose[2].aor+'배', pos:'50%',
+                shap:[{l:'식습관',v:0.72,tag:'Actionable'},{l:'신체활동',v:0.65,tag:'Actionable'},{l:'연령',v:0.48,tag:'Non-mod'},{l:'가족력',v:0.33,tag:'Non-mod'}],
+                insight:clusterDatabase.glucose[2].insight
+            },
+            tg:{
+                name:'중성지방', cluster:3, desc:clusterDatabase.tg[3].desc, aor:clusterDatabase.tg[3].aor+'배', pos:'90%',
+                shap:[{l:'식습관',v:0.88,tag:'Actionable'},{l:'음주',v:0.62,tag:'Actionable'},{l:'신체활동',v:0.45,tag:'Actionable'},{l:'연령',v:0.25,tag:'Non-mod'}],
+                insight:clusterDatabase.tg[3].insight
+            },
+            hdl:{
+                name:'HDL-C', cluster:3, desc:clusterDatabase.hdl[3].desc, aor:clusterDatabase.hdl[3].aor+'배', pos:'80%',
+                shap:[{l:'식습관',v:0.80,tag:'Actionable'},{l:'운동',v:0.72,tag:'Actionable'},{l:'흡연',v:0.45,tag:'Actionable'},{l:'연령',v:0.32,tag:'Non-mod'}],
+                insight:clusterDatabase.hdl[3].insight
+            }
+        };
+
+        // Modal data for different dates
+        const dayData = {
+            '2026-01-01': {
+                status: [
+                    { goal: '튀김 줄이기', achieved: true },
+                    { goal: '가공식품 줄이기', achieved: true },
+                    { goal: '채소 늘리기', achieved: true }
+                ],
+                meals: [
+                    { time: '08:30', name: '토스트 & 계란', tag: 'breakfast', tagLabel: '아침', stats: '320 kcal · 탄수화물 45g · 단백질 15g · 지방 10g' },
+                    { time: '10:30', name: '바나나 1개', tag: 'snack', tagLabel: '간식', stats: '105 kcal · 탄수화물 27g · 단백질 1g' },
+                    { time: '12:45', name: '비빔밥', tag: 'lunch', tagLabel: '점심', stats: '520 kcal · 탄수화물 78g · 단백질 20g · 지방 15g' },
+                    { time: '19:00', name: '구운 닭가슴살 샐러드', tag: 'dinner', tagLabel: '저녁', stats: '380 kcal · 탄수화물 25g · 단백질 35g · 지방 12g' }
+                ],
+                goals: [
+                    { icon: '🍟', label: '튀김/부침 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🍔', label: '가공식품 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🥦', label: '채소 섭취', current: 3, target: 2, status: 'success' },
+                    { icon: '💧', label: '물 섭취', current: '2.0L', target: '2.0L', status: 'success' },
+                    { icon: '🔥', label: '총 칼로리', current: '1,325 kcal', target: '1,800 kcal', status: 'success' }
+                ],
+                feedback: '오늘은 모든 목표를 달성하셨네요! 특히 튀김/가공식품을 전혀 섭취하지 않고, 채소를 목표보다 더 많이 드신 점이 훌륭합니다. 이 패턴을 유지하세요!'
+            },
+            '2026-01-02': {
+                status: [
+                    { goal: '튀김 줄이기', achieved: true },
+                    { goal: '가공식품 줄이기', achieved: true },
+                    { goal: '채소 늘리기', achieved: true }
+                ],
+                meals: [
+                    { time: '07:30', name: '그릭 요거트 & 그래놀라', tag: 'breakfast', tagLabel: '아침', stats: '280 kcal · 탄수화물 38g · 단백질 14g · 지방 8g' },
+                    { time: '12:00', name: '닭가슴살 샐러드', tag: 'lunch', tagLabel: '점심', stats: '350 kcal · 탄수화물 25g · 단백질 40g · 지방 10g' },
+                    { time: '18:30', name: '연어구이 & 야채', tag: 'dinner', tagLabel: '저녁', stats: '420 kcal · 탄수화물 30g · 단백질 35g · 지방 18g' }
+                ],
+                goals: [
+                    { icon: '🍟', label: '튀김/부침 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🍔', label: '가공식품 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🥦', label: '채소 섭취', current: 3, target: 2, status: 'success' },
+                    { icon: '💧', label: '물 섭취', current: '2.2L', target: '2.0L', status: 'success' },
+                    { icon: '🔥', label: '총 칼로리', current: '1,050 kcal', target: '1,800 kcal', status: 'success' }
+                ],
+                feedback: '완벽한 하루입니다! 모든 목표를 달성했고 특히 수분 섭취가 목표를 초과했네요. 건강한 식단을 유지하고 계십니다!'
+            },
+            '2026-01-03': {
+                status: [
+                    { goal: '튀김 줄이기', achieved: true },
+                    { goal: '가공식품 줄이기', achieved: false },
+                    { goal: '채소 늘리기', achieved: true }
+                ],
+                meals: [
+                    { time: '08:30', name: '시리얼 & 우유', tag: 'breakfast', tagLabel: '아침', stats: '280 kcal · 탄수화물 52g · 단백질 8g · 지방 5g' },
+                    { time: '12:00', name: '햄버거 세트', tag: 'lunch', tagLabel: '점심', stats: '850 kcal · 탄수화물 95g · 단백질 30g · 지방 38g' },
+                    { time: '18:30', name: '샐러드', tag: 'dinner', tagLabel: '저녁', stats: '220 kcal · 탄수화물 18g · 단백질 12g · 지방 10g' }
+                ],
+                goals: [
+                    { icon: '🍟', label: '튀김/부침 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🍔', label: '가공식품 섭취', current: 2, target: 0, status: 'warning' },
+                    { icon: '🥦', label: '채소 섭취', current: 2, target: 2, status: 'success' },
+                    { icon: '💧', label: '물 섭취', current: '1.5L', target: '2.0L', status: 'warning' },
+                    { icon: '🔥', label: '총 칼로리', current: '1,350 kcal', target: '1,800 kcal', status: 'success' }
+                ],
+                feedback: '점심에 햄버거를 드셔서 가공식품 목표를 달성하지 못했네요. 외식할 때도 샐러드나 그릴 메뉴를 선택하면 좋습니다. 다음 번엔 더 나은 선택을 해보세요!'
+            },
+            '2026-01-04': {
+                status: [
+                    { goal: '튀김 줄이기', achieved: true },
+                    { goal: '가공식품 줄이기', achieved: true },
+                    { goal: '채소 늘리기', achieved: true }
+                ],
+                meals: [
+                    { time: '08:00', name: '아보카도 토스트', tag: 'breakfast', tagLabel: '아침', stats: '350 kcal · 탄수화물 40g · 단백질 12g · 지방 16g' },
+                    { time: '13:00', name: '현미밥 & 생선구이', tag: 'lunch', tagLabel: '점심', stats: '480 kcal · 탄수화물 65g · 단백질 32g · 지방 12g' },
+                    { time: '19:00', name: '두부 야채볶음', tag: 'dinner', tagLabel: '저녁', stats: '320 kcal · 탄수화물 28g · 단백질 22g · 지방 14g' }
+                ],
+                goals: [
+                    { icon: '🍟', label: '튀김/부침 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🍔', label: '가공식품 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🥦', label: '채소 섭취', current: 3, target: 2, status: 'success' },
+                    { icon: '💧', label: '물 섭취', current: '2.1L', target: '2.0L', status: 'success' },
+                    { icon: '🔥', label: '총 칼로리', current: '1,150 kcal', target: '1,800 kcal', status: 'success' }
+                ],
+                feedback: '모든 목표를 완벽하게 달성했습니다! 특히 단백질과 채소 섭취가 균형 잡혀있어 이상적인 식단입니다. 계속 유지하세요!'
+            },
+            '2026-01-05': {
+                status: [
+                    { goal: '튀김 줄이기', achieved: false },
+                    { goal: '가공식품 줄이기', achieved: false },
+                    { goal: '채소 늘리기', achieved: true }
+                ],
+                meals: [
+                    { time: '09:00', name: '도넛 2개', tag: 'breakfast', tagLabel: '아침', stats: '480 kcal · 탄수화물 62g · 단백질 6g · 지방 24g' },
+                    { time: '12:30', name: '치킨 & 감자튀김', tag: 'lunch', tagLabel: '점심', stats: '920 kcal · 탄수화물 78g · 단백질 42g · 지방 48g' },
+                    { time: '19:00', name: '야채죽', tag: 'dinner', tagLabel: '저녁', stats: '180 kcal · 탄수화물 32g · 단백질 8g · 지방 2g' }
+                ],
+                goals: [
+                    { icon: '🍟', label: '튀김/부침 섭취', current: 2, target: 0, status: 'danger' },
+                    { icon: '🍔', label: '가공식품 섭취', current: 3, target: 0, status: 'danger' },
+                    { icon: '🥦', label: '채소 섭취', current: 2, target: 2, status: 'success' },
+                    { icon: '💧', label: '물 섭취', current: '1.2L', target: '2.0L', status: 'warning' },
+                    { icon: '🔥', label: '총 칼로리', current: '1,580 kcal', target: '1,800 kcal', status: 'success' }
+                ],
+                feedback: '오늘은 튀김/가공식품을 많이 드셨네요. 스트레스를 받거나 바쁜 날이었나요? 내일은 건강한 선택을 미리 계획해보세요. 저녁은 잘 조절하셨어요!'
+            },
+            '2026-01-06': {
+                status: [
+                    { goal: '튀김 줄이기', achieved: true },
+                    { goal: '가공식품 줄이기', achieved: true },
+                    { goal: '채소 늘리기', achieved: true }
+                ],
+                meals: [
+                    { time: '08:00', name: '스크램블 에그 & 샐러드', tag: 'breakfast', tagLabel: '아침', stats: '320 kcal · 탄수화물 20g · 단백질 28g · 지방 16g' },
+                    { time: '12:00', name: '퀴노아 볼', tag: 'lunch', tagLabel: '점심', stats: '450 kcal · 탄수화물 58g · 단백질 18g · 지방 15g' },
+                    { time: '18:30', name: '구운 닭가슴살 & 브로콜리', tag: 'dinner', tagLabel: '저녁', stats: '380 kcal · 탄수화물 22g · 단백질 42g · 지방 12g' }
+                ],
+                goals: [
+                    { icon: '🍟', label: '튀김/부침 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🍔', label: '가공식품 섭취', current: 0, target: 0, status: 'success' },
+                    { icon: '🥦', label: '채소 섭취', current: 3, target: 2, status: 'success' },
+                    { icon: '💧', label: '물 섭취', current: '2.3L', target: '2.0L', status: 'success' },
+                    { icon: '🔥', label: '총 칼로리', current: '1,150 kcal', target: '1,800 kcal', status: 'success' }
+                ],
+                feedback: '완벽한 회복입니다! 어제의 실수를 만회하고 오늘은 모든 목표를 달성했습니다. 특히 수분 섭취와 단백질 섭취가 우수합니다!'
+            }
+        };
+
+        // Open modal
+        function openDayModal(dateStr) {
+            const data = dayData[dateStr] || dayData['2026-01-01'];
+            const modal = document.getElementById('dayModal');
+            
+            // Update title
+            const date = new Date(dateStr);
+            const monthDay = `${date.getMonth() + 1}월 ${date.getDate()}일`;
+            document.getElementById('modalTitle').textContent = `2026년 ${monthDay}`;
+
+            // Update status boxes
+            const statusHTML = data.status.map((s, i) => {
+                const statusClass = s.achieved ? 'success' : (i === 1 ? 'partial' : 'failed');
+                const statusIcon = s.achieved ? '✅' : (i === 1 ? '⚠️' : '❌');
+                return `
+                    <div class="status-box ${statusClass}">
+                        <div class="status-number">${statusIcon}</div>
+                        <div class="status-label">${s.goal}</div>
+                    </div>
+                `;
+            }).join('');
+            document.querySelector('.goal-status-summary').innerHTML = statusHTML;
+
+            // Update meals
+            const mealsHTML = data.meals.map(m => `
+                <div class="timeline-item">
+                    <div class="timeline-time">${m.time}</div>
+                    <div class="timeline-content">
+                        <div class="meal-name">
+                            ${m.name}
+                            <span class="meal-tag tag-${m.tag}">${m.tagLabel}</span>
+                        </div>
+                        <div class="meal-stats">${m.stats}</div>
+                    </div>
+                </div>
+            `).join('');
+            document.querySelector('.meal-timeline').innerHTML = `
+                <h3 class="section-title">
+                    <span>🍽️</span>
+                    <span>식사 기록</span>
+                </h3>
+                ${mealsHTML}
+            `;
+
+            // Update goals
+            const goalsHTML = data.goals.map(g => {
+                const valueClass = g.status === 'success' ? 'value-success' : (g.status === 'warning' ? 'value-warning' : 'value-danger');
+                const statusIcon = g.status === 'success' ? '✅' : (g.status === 'warning' ? '⚠️' : '❌');
+                return `
+                    <div class="goal-detail-item">
+                        <div class="goal-detail-label">${g.icon} ${g.label}</div>
+                        <div class="goal-detail-value ${valueClass}">${g.current}${typeof g.target === 'number' ? '회' : ''} (목표 ${g.target}${typeof g.target === 'number' ? '회' : ''}) ${statusIcon}</div>
+                    </div>
+                `;
+            }).join('');
+            document.querySelector('.goal-detail-section').innerHTML = `
+                <h3 class="section-title">
+                    <span>🎯</span>
+                    <span>목표 달성 상세</span>
+                </h3>
+                ${goalsHTML}
+            `;
+
+            // Update feedback
+            document.querySelector('.modal-body > div:last-child > div:last-child').textContent = data.feedback;
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close modal
+        function closeDayModal() {
+            document.getElementById('dayModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on overlay click
+        document.getElementById('dayModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDayModal();
+            }
+        });
+
+        // MetS Click Handler
+        document.querySelectorAll('.mets-tab').forEach(t=>{
+            t.addEventListener('click',function(){
+                document.querySelectorAll('.mets-tab').forEach(x=>x.classList.remove('active'));
+                this.classList.add('active');
+                updateMets(this.getAttribute('data-mets'))
+            })
+        });
+
+        // Update Overall MetS Analysis
+        function updateOverallMets(){
+            const d=metsData['overall'];
+            document.getElementById('overallClusterSubtitle').textContent=d.name+' 기준';
+            document.getElementById('overallClusterNumber').textContent=d.cluster;
+            document.getElementById('overallClusterDescription').textContent=d.desc;
+            document.getElementById('overallAorContainer').textContent=d.aor;
+            document.getElementById('overallRiskPointer').style.left=d.pos;
+
+            // SHAP Drivers for Overall
+            const shapHTML = d.shap.map(s => `
+                <div class="driver-item">
+                    <div class="driver-header">
+                        <span>${s.l} <span class="driver-tag" style="background:${s.tag==='Actionable'?'#dcfce7':'#f1f5f9'}; color:${s.tag==='Actionable'?'#166534':'#64748b'}">${s.tag==='Actionable'?'개선가능':'개선가능'}</span></span>
+                        <span>${Math.round(s.v*100)}%</span>
+                    </div>
+                    <div class="driver-bar-bg"><div class="driver-bar-fill-overall" style="width:0%; background:${s.v>0.6?'#ef4444':(s.v>0.4?'#f59e0b':'#84cc16')}"></div></div>
+                </div>
+            `).join('');
+            document.getElementById('overallShapContainer').innerHTML = shapHTML;
+            
+            // Animate bars
+            setTimeout(() => {
+                document.querySelectorAll('.driver-bar-fill-overall').forEach((bar, idx) => {
+                    bar.style.width = (d.shap[idx].v * 100) + '%';
+                });
+            }, 100);
+            
+            // Insight
+            document.getElementById('overallShapInsightText').textContent = d.insight;
+        }
+
+        function updateMets(t){
+            const d=metsData[t];
+            // Risk Section
+            document.getElementById('dietClusterSubtitle').textContent=d.name+' 기준';
+            document.getElementById('dietClusterNumber').textContent=d.cluster;
+            document.getElementById('dietClusterDescription').textContent=d.desc;
+            document.getElementById('aorContainer').textContent=d.aor;
+            document.getElementById('riskPointer').style.left=d.pos;
+
+            // SHAP Drivers
+            const shapHTML = d.shap.map(s => `
+                <div class="driver-item">
+                    <div class="driver-header">
+                        <span>${s.l} <span class="driver-tag" style="background:${s.tag==='Actionable'?'#dcfce7':'#f1f5f9'}; color:${s.tag==='Actionable'?'#166534':'#64748b'}">${s.tag==='Actionable'?'개선가능':'개선가능'}</span></span>
+                        <span>${Math.round(s.v*100)}%</span>
+                    </div>
+                    <div class="driver-bar-bg"><div class="driver-bar-fill" style="width:0%; background:${s.v>0.6?'#ef4444':(s.v>0.4?'#f59e0b':'#84cc16')}"></div></div>
+                </div>
+            `).join('');
+            document.getElementById('shapContainer').innerHTML = shapHTML;
+            
+            // Animate bars
+            setTimeout(() => {
+                document.querySelectorAll('.driver-bar-fill').forEach((bar, idx) => {
+                    bar.style.width = (d.shap[idx].v * 100) + '%';
+                });
+            }, 100);
+            
+            // Insight
+            document.getElementById('shapInsightText').textContent = d.insight;
+        }
+
+        window.onload=function(){
+            // 저장된 데이터가 있으면 자동 로드
+            const saved = localStorage.getItem('nutrigoData');
+            if(saved) {
+                const data = JSON.parse(saved);
+                
+                // metsData를 클러스터 DB에서 업데이트 + 저장된 SHAP 사용
+                const overallCluster = data.overall.cluster;
+                const overallData = clusterDatabase.overall[overallCluster];
+                metsData.overall.cluster = overallCluster;
+                metsData.overall.aor = overallData.aor + '배';
+                metsData.overall.desc = overallData.desc;
+                metsData.overall.insight = overallData.insight;
+                metsData.overall.shap = data.overall.shap && data.overall.shap.length > 0 ? data.overall.shap : [{l:'식습관',v:0.82,tag:'Actionable'},{l:'신체활동',v:0.68,tag:'Actionable'},{l:'흡연',v:0.55,tag:'Non-mod'},{l:'음주',v:0.38,tag:'Actionable'}];
+                
+                ['waist', 'bp', 'glucose', 'tg', 'hdl'].forEach(key => {
+                    const cluster = data[key].cluster;
+                    const clusterData = clusterDatabase[key][cluster];
+                    metsData[key].cluster = cluster;
+                    metsData[key].aor = clusterData.aor + '배';
+                    metsData[key].desc = clusterData.desc;
+                    metsData[key].insight = clusterData.insight;
+                    
+                    // 저장된 SHAP이 있으면 최대 4개까지만 자르고, 없으면 더미 4개를 세팅
+                    metsData[key].shap = data[key].shap && data[key].shap.length > 0 
+                        ? data[key].shap.slice(0, 4) 
+                        : [
+                            {l:'식습관',v:0.85,tag:'Actionable'},
+                            {l:'신체활동',v:0.62,tag:'Actionable'},
+                            {l:'연령',v:0.45,tag:'Non-mod'},
+                            {l:'기타요인',v:0.25,tag:'Actionable'}
+                        ];
+                });
+            }
+            
+            animateNumbers();
+            updateOverallMets();
+            updateMets('waist');
+            
+            // Calorie Chart
+            new Chart(document.getElementById('calorieChart'),{
+                type:'doughnut',
+                data:{
+                    labels:['섭취','잔여'],
+                    datasets:[{
+                        data:[560,1240],
+                        backgroundColor:['#f59e0b','#f1f5f9'],
+                        borderWidth:0
+                    }]
+                },
+                options:{
+                    cutout:'75%',
+                    plugins:{legend:{display:false}}
+                }
+            });
+            
+            // Spider Chart - 전역 변수로 저장
+            const habitData = saved ? JSON.parse(saved).habits : [80,50,60,70,40,70,55,50,60,10,15,25,35,40,30,25,60,60,60];
+            window.foodHabitsChart = new Chart(document.getElementById('foodHabitsSpider'),{
+                type:'radar',
+                data:{
+                    labels:['식사빈도','외식','간식','곡류','육류','채소','유제품','과일','물','튀김','지방육류','인스턴트','단음식','음료','커피','식사량','밥량','소금추가','짜게먹기'],
+                    datasets:[{
+                        label:'나의 식습관',
+                        data:habitData,
+                        backgroundColor:'rgba(132, 204, 22, 0.2)',
+                        borderColor:'#84cc16',
+                        borderWidth: 2,
+                        pointBackgroundColor: function(context) {
+                            const dangerIndexes = [9, 10, 11, 12, 13]; // 튀김, 지방육류, 인스턴트, 단음식, 음료
+                            return dangerIndexes.includes(context.dataIndex) ? '#ef4444' : '#84cc16';
+                        },
+                        pointRadius: 4
+                    }]
+                },
+                options:{
+                    maintainAspectRatio:false,
+                    scales:{
+                        r:{
+                            min:0, max:100, 
+                            ticks:{display:false},
+                            pointLabels: { 
+                                font: { size: 11, family: 'Pretendard', weight: '600' }, 
+                                color: '#64748b' 
+                            }
+                        }
+                    },
+                    plugins:{legend:{display:false}}
+                }
+            });
+            
+            // 설정 탭 초기화
+            initSettingsTab();
+        };
+        
+        // 거미줄 차트 업데이트 함수
+        function updateFoodHabitsChart(habitData) {
+            if(window.foodHabitsChart) {
+                window.foodHabitsChart.data.datasets[0].data = habitData;
+                window.foodHabitsChart.update();
+            } else {
+                // 차트가 없으면 새로 생성
+                const ctx = document.getElementById('foodHabitsSpider');
+                if(ctx) {
+                    window.foodHabitsChart = new Chart(ctx, {
+                        type:'radar',
+                        data:{
+                            labels:['식사빈도','외식','간식','곡류','육류','채소','유제품','과일','물','튀김','지방육류','인스턴트','단음식','음료','커피','식사량','밥량','소금추가','짜게먹기'],
+                            datasets:[{
+                                label:'나의 식습관',
+                                data:habitData,
+                                backgroundColor:'rgba(132, 204, 22, 0.2)',
+                                borderColor:'#84cc16',
+                                borderWidth: 2,
+                                pointBackgroundColor: function(context) {
+                                    const dangerIndexes = [9, 10, 11, 12, 13];
+                                    return dangerIndexes.includes(context.dataIndex) ? '#ef4444' : '#84cc16';
+                                },
+                                pointRadius: 4
+                            }]
+                        },
+                        options:{
+                            maintainAspectRatio:false,
+                            scales:{
+                                r:{
+                                    min:0, max:100, 
+                                    ticks:{display:false},
+                                    pointLabels: { 
+                                        font: { size: 11, family: 'Pretendard', weight: '600' }, 
+                                        color: '#64748b' 
+                                    }
+                                }
+                            },
+                            plugins:{legend:{display:false}}
+                        }
+                    });
+                }
+            }
+        }
+
+        // 설정 탭 초기화
+        function initSettingsTab() {
+            // SHAP은 AI가 자동으로 계산합니다
+            
+            const metsLabels = [
+                {key: 'waist', name: '허리둘레'},
+                {key: 'bp', name: '혈압'},
+                {key: 'glucose', name: '공복혈당'},
+                {key: 'tg', name: '중성지방'},
+                {key: 'hdl', name: 'HDL-C'}
+            ];
+            
+            const container = document.getElementById('mets-inputs');
+            let html = '';
+            
+            metsLabels.forEach(item => {
+                html += `
+                    <div style="border: 1px solid #e2e8f0; padding: 16px; border-radius: 10px;">
+                        <h4 style="font-weight: 700; margin-bottom: 12px;">${item.name}</h4>
+                        <div style="display: grid; gap: 12px;">
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px;">클러스터 선택</label>
+                                <select id="${item.key}-cluster" onchange="updateMetsFromCluster('${item.key}')" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 13px;">
+                                    <option value="1">클러스터 1 - 건강군</option>
+                                    <option value="2">클러스터 2 - 주의군</option>
+                                    <option value="3" selected>클러스터 3 - 위험군</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #64748b;">AOR (자동 입력)</label>
+                                <input type="text" id="${item.key}-aor" readonly style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; color: #64748b;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #64748b;">설명 (자동 입력)</label>
+                                <input type="text" id="${item.key}-desc" readonly style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; color: #64748b;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: #64748b;">인사이트 (자동 입력)</label>
+                                <textarea id="${item.key}-insight" readonly rows="2" style="width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; color: #64748b;"></textarea>
+                            </div>
+                            
+                            <!-- SHAP은 AI가 자동으로 계산합니다 -->
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // 초기값 설정
+            updateOverallFromCluster();
+            metsLabels.forEach(item => {
+                updateMetsFromCluster(item.key);
+            });
+        }
+
+        // SHAP 입력 필드 생성 함수
+
+        // MetS 전체 클러스터 선택 시 자동 업데이트
+        function updateOverallFromCluster() {
+            const cluster = document.getElementById('overall-cluster').value;
+            const data = clusterDatabase.overall[cluster];
+            
+            document.getElementById('overall-aor').value = data.aor + '배';
+            document.getElementById('overall-desc').value = data.desc;
+            document.getElementById('overall-insight').value = data.insight;
+        }
+
+        // MetS 개별 클러스터 선택 시 자동 업데이트
+        function updateMetsFromCluster(key) {
+            const cluster = document.getElementById(`${key}-cluster`).value;
+            const data = clusterDatabase[key][cluster];
+            
+            document.getElementById(`${key}-aor`).value = data.aor + '배';
+            document.getElementById(`${key}-desc`).value = data.desc;
+            document.getElementById(`${key}-insight`).value = data.insight;
+        }
+
+        // 모든 데이터 저장
+        // AI로 클러스터 + SHAP 자동 분석
+        async function predictClusterWithAI() {
+            // 19개 설문조사 응답 수집
+            const habits = [];
+            for(let i = 1; i <= 19; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if(!selected) {
+                    alert(`Q${i} 문항이 선택되지 않았습니다.`);
+                    return;
+                }
+                habits.push(parseInt(selected.value));
+            }
+            
+            // 추가 정보 수집
+            const userInfo = {
+                age: parseInt(document.getElementById('user-age').value),
+                sex: parseInt(document.getElementById('user-sex').value),
+                education: parseInt(document.getElementById('user-education').value),
+                marital_status: parseInt(document.getElementById('user-marital').value),
+                income: parseInt(document.getElementById('user-income').value),
+                physical_activity: parseInt(document.getElementById('user-physical').value),
+                alcohol: parseInt(document.getElementById('user-alcohol').value),
+                smoking: parseInt(document.getElementById('user-smoking').value)
+            };
+            
+            try {
+                alert('AI가 5가지 대사증후군 지표와 종합 MetS 모델을 분석하고 있습니다...');
+                
+                // API 호출
+                const response = await fetch('http://localhost:5000/predict_cluster_and_shap', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        survey_responses: habits,
+                        ...userInfo
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('서버 응답 오류');
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    const responseData = result.data;
+
+                    // 백엔드 키(Key) -> 프론트엔드 탭/요소(Key) 매핑에 MetS 추가!
+                    const metricMap = {
+                        'MetS': 'overall', // 대사증후군 전체 -> 종합
+                        'IWC': 'waist',    // 복부비만 -> 허리둘레
+                        'EBP': 'bp',       // 고혈압 -> 혈압
+                        'IFG': 'glucose',  // 공복혈당장애 -> 공복혈당
+                        'ET': 'tg',        // 고중성지방 -> 중성지방
+                        'DHDL-C': 'hdl'    // 저HDL콜레스테롤 -> HDL-C
+                    };
+
+                    // 개별 지표의 SHAP 데이터를 전역으로 저장할 객체 초기화
+                    window.aiShapValuesMap = {};
+
+                    // 응답 데이터 순회하며 UI 업데이트 및 변환
+                    for (const [beKey, feKey] of Object.entries(metricMap)) {
+                        if (responseData[beKey]) {
+                            const metricData = responseData[beKey];
+                            const clusterId = metricData.final_cluster_id;
+
+                            // 1. 해당 지표의 UI Select Box 업데이트
+                            const selectEl = document.getElementById(`${feKey}-cluster`);
+                            if (selectEl) {
+                                selectEl.value = clusterId;
+                                if(feKey === 'overall') {
+                                    updateOverallFromCluster();
+                                } else {
+                                    updateMetsFromCluster(feKey);
+                                }
+                            }
+
+                            // 2. SHAP 데이터를 프론트엔드 차트용 배열 포맷으로 변환
+                            const shapArray = [];
+                            const shapObj = metricData.shap;
+                            
+                            // SHAP 값들을 내림차순 정렬
+                            const sortedShapEntries = Object.entries(shapObj).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]));
+                            
+                            // 👉 UI 통일성을 위해 무조건 상위 4개 요소만 자르기
+                            const top4Shap = sortedShapEntries.slice(0, 4);
+                            
+                            // 총합 계산 (백분율 게이지 바 표시용)
+                            const totalShap = top4Shap.reduce((sum, [k, v]) => sum + Math.abs(v), 0) || 1;
+
+                            top4Shap.forEach(([label, value]) => {
+                                // 흡연, 성별 등은 개선 불가능(Non-mod), 그 외는 개선 가능(Actionable) 태그 부여
+                                let tag = 'Actionable';
+                                if (['Age', 'Sex', 'Education Level', 'Marital Status', 'Household Income', '연령', '성별'].includes(label)) {
+                                    tag = 'Non-mod';
+                                }
+
+                                shapArray.push({
+                                    l: label,
+                                    v: Math.abs(value) / totalShap, // 0~1 사이 비율로 정규화
+                                    tag: tag
+                                });
+                            });
+
+                            // 변환된 배열을 Map에 저장
+                            window.aiShapValuesMap[feKey] = shapArray;
+                        }
+                    }
+                    
+                    alert(`✅ AI 분석 완료!\n모든 지표에 모델 예측 데이터가 할당되었습니다.\n"데이터 적용하기" 버튼을 눌러 차트를 확인하세요.`);
+                
+                } else {
+                    alert('예측 실패: ' + result.error);
+                }
+                
+            } catch (error) {
+                alert('통신 에러가 발생했습니다.\n\n에러 내용: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        // 모든 데이터 저장 후 UI 적용
+        function saveAllData() {
+            // 저장된 SHAP 맵 가져오기 (없으면 빈 객체)
+            const shapMap = window.aiShapValuesMap || {};
+
+            const data = {
+                overall: {
+                    cluster: parseInt(document.getElementById('overall-cluster').value),
+                    shap: shapMap['overall'] || []
+                },
+                waist: {
+                    cluster: parseInt(document.getElementById('waist-cluster').value),
+                    shap: shapMap['waist'] || []
+                },
+                bp: {
+                    cluster: parseInt(document.getElementById('bp-cluster').value),
+                    shap: shapMap['bp'] || []
+                },
+                glucose: {
+                    cluster: parseInt(document.getElementById('glucose-cluster').value),
+                    shap: shapMap['glucose'] || []
+                },
+                tg: {
+                    cluster: parseInt(document.getElementById('tg-cluster').value),
+                    shap: shapMap['tg'] || []
+                },
+                hdl: {
+                    cluster: parseInt(document.getElementById('hdl-cluster').value),
+                    shap: shapMap['hdl'] || [] 
+                },
+                habits: []
+            };
+            
+            // 19개 문항 수집
+            for(let i = 1; i <= 19; i++) {
+                const selected = document.querySelector(`input[name="q${i}"]:checked`);
+                if(!selected) {
+                    alert(`Q${i} 문항에 응답해주세요.`);
+                    return;
+                }
+                data.habits.push(parseInt(selected.value));
+            }
+            
+            localStorage.setItem('nutrigoData', JSON.stringify(data));
+            
+            function calculatePos(cluster) {
+                const posMap = {
+                    1: '16%',   // 저위험
+                    2: '50%',   // 중위험
+                    3: '88%'    // 고위험
+                };
+                return posMap[cluster] || '50%';
+            }
+            
+            // metsData 업데이트 - Overall
+            const overallCluster = data.overall.cluster;
+            const overallData = clusterDatabase.overall[overallCluster];
+            metsData.overall.cluster = overallCluster;
+            metsData.overall.aor = overallData.aor + '';
+            metsData.overall.desc = overallData.desc;
+            metsData.overall.insight = overallData.insight;
+            metsData.overall.shap = data.overall.shap.length > 0 ? data.overall.shap : [{l:'식단 ',v:0,tag:'Non-mod'}];
+            metsData.overall.pos = calculatePos(overallCluster);
+            
+            // metsData 업데이트 - 개별 지표
+            ['waist', 'bp', 'glucose', 'tg', 'hdl'].forEach(key => {
+                const cluster = data[key].cluster;
+                const clusterData = clusterDatabase[key][cluster];
+                metsData[key].cluster = cluster;
+                metsData[key].aor = clusterData.aor + '';
+                metsData[key].desc = clusterData.desc;
+                metsData[key].insight = clusterData.insight;
+                metsData[key].shap = data[key].shap.length > 0 ? data[key].shap : [{l:'데이터 부족',v:0,tag:'Non-mod'}];
+                metsData[key].pos = calculatePos(cluster); 
+            });
+            
+            // UI 업데이트
+            updateOverallMets();
+            updateMets(document.querySelector('.mets-tab.active').getAttribute('data-mets'));
+            
+            // 식습관 차트 업데이트
+            updateFoodHabitsChart(data.habits);
+            
+            // 분석 탭으로 전환
+            switchTab('progress');
+            
+            alert('데이터가 적용되었습니다. 건강 리포트에서 결과를 확인하세요.');
+        }
+
+        // 저장된 데이터 불러오기
+        function loadAllData() {
+            const saved = localStorage.getItem('nutrigoData');
+            if(!saved) {
+                alert('저장된 데이터가 없습니다.');
+                return;
+            }
+            
+            const data = JSON.parse(saved);
+            
+            // Overall 클러스터 설정 및 AI SHAP 복원
+            document.getElementById('overall-cluster').value = data.overall.cluster;
+            updateOverallFromCluster();
+            window.aiShapValues = data.overall.shap || [];
+            
+            // MetS 개별 지표 클러스터 설정
+            ['waist', 'bp', 'glucose', 'tg', 'hdl'].forEach(key => {
+                document.getElementById(`${key}-cluster`).value = data[key].cluster;
+                updateMetsFromCluster(key);
+            });
+            
+            // 19개 식습관 설문 응답 불러오기
+            data.habits.forEach((val, idx) => {
+                const qNum = idx + 1;
+                const radio = document.querySelector(`input[name="q${qNum}"][value="${val}"]`);
+                if(radio) {
+                    radio.checked = true;
+                }
+            });
+            
+            // metsData 업데이트 (클러스터 DB에서 가져오기 + 저장된 SHAP 사용)
+            const overallCluster = data.overall.cluster;
+            const overallData = clusterDatabase.overall[overallCluster];
+            metsData.overall.cluster = overallCluster;
+            metsData.overall.aor = overallData.aor + '배';
+            metsData.overall.desc = overallData.desc;
+            metsData.overall.insight = overallData.insight;
+            metsData.overall.shap = data.overall.shap.length > 0 ? data.overall.shap : [{l:'데이터 없음',v:0,tag:'Non-mod'}];
+            
+            ['waist', 'bp', 'glucose', 'tg', 'hdl'].forEach(key => {
+                const cluster = data[key].cluster;
+                const clusterData = clusterDatabase[key][cluster];
+                metsData[key].cluster = cluster;
+                metsData[key].aor = clusterData.aor + '배';
+                metsData[key].desc = clusterData.desc;
+                metsData[key].insight = clusterData.insight;
+                metsData[key].shap = data[key].shap.length > 0 ? data[key].shap : [{l:'데이터 없음',v:0,tag:'Non-mod'}];
+            });
+            
+            // 차트 업데이트
+            updateOverallMets();
+            updateMets(document.querySelector('.mets-tab.active').getAttribute('data-mets'));
+            
+            // 거미줄 차트 업데이트
+            updateFoodHabitsChart(data.habits);
+            
+            alert('데이터를 불러왔습니다. 분석 탭에서 확인하세요.');
+        }
+    </script>
+
+        
+
+    <script>
+    function generateHealthHTML() {
+        try {
+            // 웹앱의 전역 변수에서 데이터 자동으로 읽기
+            const userName = document.querySelector('.u-name')?.textContent.trim() || '사용자';
+            
+            // metsData가 없으면 오류 메시지
+            if (typeof metsData === 'undefined') {
+                alert('❌ 웹앱 데이터를 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
+                return;
+            }
+            
+            // 기본 건강 지표 - 웹앱 DOM에서 읽기 (예시 값 유지, 실제 구현시 DOM 파싱 필요)
+            const healthIndicators = {
+                weight: { value: '65kg', change: -2, status: 'safe', position: 45 },
+                waist: { value: '85cm', change: 1, status: 'danger', position: 83 },
+                glucose: { value: '105mg/dL', change: 7, status: 'warn', position: 50 },
+                bp: { value: '138mmHg', change: 8, status: 'danger', position: 85 },
+                tg: { value: '180mg/dL', change: 14, status: 'danger', position: 90 },
+                hdl: { value: '40mg/dL', change: -3, status: 'danger', position: 35 }
+            };
+            
+            // 상세 지표 데이터 - metsData에서 자동으로 읽기
+            const detailedMetrics = [];
+            const metricsOrder = ['waist', 'bp', 'glucose', 'tg', 'hdl'];
+            const valueMap = {
+                waist: '85cm',
+                bp: '138mmHg', 
+                glucose: '105mg/dL',
+                tg: '180mg/dL',
+                hdl: '40mg/dL'
+            };
+            
+            metricsOrder.forEach(key => {
+                const data = metsData[key];
+                if (!data) return;
+                
+                // 위험도 판정
+                let badge = 'success';
+                const posNum = parseInt(data.pos);
+                if (posNum >= 70) badge = 'danger';
+                else if (posNum >= 40) badge = 'warning';
+                
+                // SHAP 데이터 변환
+                const shap = data.shap.map(s => ({
+                    label: s.l,
+                    value: Math.round(s.v * 100),
+                    grey: s.tag !== 'Actionable'
+                }));
+                
+                detailedMetrics.push({
+                    name: data.name,
+                    value: valueMap[key],
+                    risk: data.aor,
+                    prob: data.pos,
+                    badge: badge,
+                    insight: data.insight,
+                    shap: shap
+                });
+            });
+            
+            // 목표 데이터 - dayData에서 최근 날짜 읽기 (예시로 고정값 사용)
+            const goals = [
+                {name: '튀김/부침 줄이기', current: '5회', target: '주 2회 이하', progress: 30, badge: 'danger', text: '개선필요'},
+                {name: '가공식품 줄이기', current: '6회', target: '주 3회 이하', progress: 50, badge: 'warning', text: '개선중'},
+                {name: '채소 섭취 늘리기', current: '12회', target: '주 14회 이상', progress: 86, badge: 'success', text: '우수'}
+            ];
+            
+            // HTML 생성
+            let indicatorsHTML = '';
+            const indicators = [
+                {icon:'⚖️', label:'체중 (BMI)', value:healthIndicators.weight.value, change:healthIndicators.weight.change, 
+                 status:healthIndicators.weight.status, pos:healthIndicators.weight.position,
+                 labels:['저체중','정상','과체중'], gradient:'linear-gradient(90deg,#94a3b8 0%,#94a3b8 15%,#22c55e 15%,#22c55e 75%,#f59e0b 75%)'},
+                {icon:'📏', label:'허리둘레', value:healthIndicators.waist.value, change:healthIndicators.waist.change,
+                 status:healthIndicators.waist.status, pos:healthIndicators.waist.position,
+                 labels:['정상','주의','위험'], gradient:'linear-gradient(90deg,#22c55e 0%,#22c55e 40%,#f59e0b 40%,#f59e0b 70%,#ef4444 70%)'},
+                {icon:'🩸', label:'공복혈당', value:healthIndicators.glucose.value, change:healthIndicators.glucose.change,
+                 status:healthIndicators.glucose.status, pos:healthIndicators.glucose.position,
+                 labels:['정상','주의','고혈당'], gradient:'linear-gradient(90deg,#22c55e 0%,#22c55e 40%,#f59e0b 40%,#f59e0b 70%,#ef4444 70%)'},
+                {icon:'💓', label:'수축기 혈압', value:healthIndicators.bp.value, change:healthIndicators.bp.change,
+                 status:healthIndicators.bp.status, pos:healthIndicators.bp.position,
+                 labels:['정상','주의','고혈압'], gradient:'linear-gradient(90deg,#22c55e 0%,#22c55e 40%,#f59e0b 40%,#f59e0b 70%,#ef4444 70%)'},
+                {icon:'🔥', label:'중성지방', value:healthIndicators.tg.value, change:healthIndicators.tg.change,
+                 status:healthIndicators.tg.status, pos:healthIndicators.tg.position,
+                 labels:['정상','경계','위험'], gradient:'linear-gradient(90deg,#22c55e 0%,#22c55e 40%,#f59e0b 40%,#f59e0b 70%,#ef4444 70%)'},
+                {icon:'💊', label:'HDL-C', value:healthIndicators.hdl.value, change:healthIndicators.hdl.change,
+                 status:healthIndicators.hdl.status, pos:healthIndicators.hdl.position,
+                 labels:['위험','경계','정상'], gradient:'linear-gradient(90deg,#ef4444 0%,#ef4444 40%,#f59e0b 40%,#f59e0b 70%,#22c55e 70%)'}
+            ];
+            
+            indicators.forEach(ind => {
+                const changeSymbol = ind.change > 0 ? '▲' : '▼';
+                const changeClass = ind.change > 0 ? 'change-up' : 'change-down';
+                const statusText = ind.status === 'safe' ? '정상 범위' : ind.status === 'warn' ? '주의 단계' : '위험 범위';
+                const statusClass = 'status-' + ind.status;
+                
+                indicatorsHTML += '<div class="indicator-row"><div class="indicator-icon">' + ind.icon + '</div><div class="indicator-info"><div class="indicator-label">' + ind.label + '</div><div class="indicator-value">' + ind.value + '</div><div class="indicator-change ' + changeClass + '">' + changeSymbol + ' ' + Math.abs(ind.change) + '</div></div><div class="range-area"><div class="range-labels"><span>' + ind.labels[0] + '</span><span>' + ind.labels[1] + '</span><span>' + ind.labels[2] + '</span></div><div class="range-track" style="background:' + ind.gradient + '"><div class="range-marker" style="left:' + ind.pos + '%"></div></div><div class="range-status ' + statusClass + '">' + statusText + '</div></div></div>';
+            });
+            
+            let metricsHTML = '';
+            detailedMetrics.forEach(metric => {
+                let shapHTML = '';
+                metric.shap.forEach(s => {
+                    const color = s.grey ? '#cbd5e1' : 'var(--primary)';
+                    shapHTML += '<div class="shap-bar"><div class="shap-label">' + s.label + '</div><div class="shap-progress"><div class="shap-fill" style="width:' + s.value + '%;background:' + color + '"></div></div></div>';
+                });
+                
+                const badgeText = metric.badge === 'danger' ? '위험' : metric.badge === 'warning' ? '주의' : '우수';
+                metricsHTML += '<div class="metric-summary"><div class="metric-header"><div class="metric-name">' + metric.name + '</div><div class="risk-badge badge-' + metric.badge + '">' + badgeText + '</div></div><div class="metric-quick"><div class="quick-stat"><div class="quick-label">측정값</div><div class="quick-value">' + metric.value + '</div></div><div class="quick-stat"><div class="quick-label">위험도</div><div class="quick-value">' + metric.risk + '</div></div><div class="quick-stat"><div class="quick-label">확률</div><div class="quick-value">' + metric.prob + '</div></div></div><div style="background:#fef3c7;padding:12px;border-radius:8px;font-size:.85em;margin-bottom:10px"><strong>💡 인사이트:</strong> ' + metric.insight + '</div><div class="shap-mini">' + shapHTML + '</div></div>';
+            });
+            
+            let goalsHTML = '';
+            goals.forEach(goal => {
+                const bgColor = goal.badge === 'danger' ? '#ef4444' : goal.badge === 'warning' ? '#f59e0b' : '#22c55e';
+                goalsHTML += '<div class="goal-item"><div class="goal-top"><div class="goal-name">' + goal.name + '</div><div class="goal-badge badge-' + goal.badge + '">' + goal.text + '</div></div><div class="goal-bar"><div class="goal-fill" style="width:' + goal.progress + '%;background:' + bgColor + '"></div></div><div class="goal-stats"><span>현재: ' + goal.current + '</span><span>목표: ' + goal.target + '</span><span><strong>' + goal.progress + '%</strong></span></div></div>';
+            });
+
+            const html = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>NutriGo 건강 리포트 - ' + userName + '</title><link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"><script src="https://cdn.jsdelivr.net/npm/chart.js"><' + '/script><style>:root{--primary:#84cc16;--primary-light:#ecfccb;--primary-dark:#4d7c0f;--danger:#ef4444;--warning:#f59e0b;--success:#22c55e;--bg:#f8fafc;--surface:#fff;--text:#0f172a;--text-light:#64748b;--border:#e2e8f0}*{margin:0;padding:0;box-sizing:border-box}body{font-family:Pretendard,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding:30px 20px}.container{max-width:1400px;margin:0 auto;background:var(--surface);border-radius:20px;box-shadow:0 4px 6px -1px rgb(0 0 0/.1);overflow:hidden}.header{background:linear-gradient(135deg,#4d7c0f 0%,#65a30d 50%,#84cc16 100%);color:#fff;padding:50px 40px;position:relative}.header::before{content:\'\';position:absolute;top:-50%;right:-10%;width:500px;height:500px;background:rgba(255,255,255,.1);border-radius:50%}.header-content{position:relative;z-index:1}.logo{font-size:2.2em;font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:12px}.subtitle{font-size:1em;opacity:.95}.user-info{margin-top:15px;font-size:1.1em;font-weight:600}.date{margin-top:8px;font-size:.9em;opacity:.9}.content{padding:40px}.section{margin-bottom:40px}.section-title{font-size:1.5em;font-weight:800;margin-bottom:25px;color:var(--text);position:relative;padding-left:14px}.section-title::before{content:\'\';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--primary);border-radius:2px}.indicator-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}.indicator-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;display:grid;grid-template-columns:70px 110px 1fr;gap:15px;align-items:center}.indicator-icon{width:60px;height:60px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2em;background:linear-gradient(135deg,var(--primary-light),#f7fee7)}.indicator-info{display:flex;flex-direction:column;gap:3px}.indicator-label{font-size:.8em;color:var(--text-light);font-weight:600}.indicator-value{font-size:1.5em;font-weight:800;color:var(--text)}.indicator-change{font-size:.8em;font-weight:600}.change-up{color:var(--danger)}.change-down{color:var(--success)}.range-area{flex:1}.range-labels{display:flex;justify-content:space-between;font-size:.7em;color:var(--text-light);margin-bottom:6px;font-weight:600}.range-track{height:12px;border-radius:6px;position:relative;overflow:hidden}.range-marker{position:absolute;top:-2px;width:5px;height:16px;background:#000;border:2px solid #fff;border-radius:3px;transform:translateX(-50%)}.range-status{margin-top:6px;font-size:.8em;font-weight:700;text-align:right}.status-safe{color:var(--success)}.status-warn{color:var(--warning)}.status-danger{color:var(--danger)}.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(350px,1fr));gap:20px;margin-top:20px}.metric-summary{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}.metric-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;padding-bottom:12px;border-bottom:2px solid var(--border)}.metric-name{font-size:1.2em;font-weight:700}.risk-badge{padding:6px 16px;border-radius:16px;font-size:.85em;font-weight:700}.badge-danger{background:#fee2e2;color:#991b1b}.badge-warning{background:#fef3c7;color:#92400e}.badge-success{background:#dcfce7;color:#166534}.metric-quick{display:flex;gap:15px;margin-bottom:15px}.quick-stat{flex:1;text-align:center;padding:12px;background:#f8fafc;border-radius:8px}.quick-label{font-size:.75em;color:var(--text-light);margin-bottom:4px}.quick-value{font-size:1.1em;font-weight:800;color:var(--primary-dark)}.shap-mini{margin-top:10px}.shap-bar{display:flex;align-items:center;gap:10px;margin-bottom:8px}.shap-label{font-size:.8em;font-weight:600;min-width:100px}.shap-progress{flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden}.shap-fill{height:100%;background:var(--primary);border-radius:3px}.chart-container{position:relative;height:280px;margin:20px 0}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:25px;margin:20px 0}.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:25px}.chart-title{font-size:1.1em;font-weight:700;margin-bottom:15px;text-align:center}.goals-compact{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:15px}.goal-item{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}.goal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.goal-name{font-size:1em;font-weight:700}.goal-badge{padding:4px 12px;border-radius:12px;font-size:.8em;font-weight:600}.goal-bar{height:10px;background:#e2e8f0;border-radius:5px;overflow:hidden;margin-bottom:10px}.goal-fill{height:100%;transition:width .3s}.goal-stats{display:flex;justify-content:space-between;font-size:.8em;color:var(--text-light)}.footer{background:#f8fafc;padding:25px 40px;text-align:center;border-top:1px solid var(--border);color:var(--text-light);font-size:.85em}.disclaimer{max-width:800px;margin:0 auto;font-style:italic}@media print{body{padding:0;background:#fff}.container{box-shadow:none;border-radius:0}}</style></head><body><div class="container"><div class="header"><div class="header-content"><div class="logo"><span>🥗</span>NutriGo</div><div class="subtitle">개인 맞춤형 건강 관리 리포트</div><div class="user-info">' + userName + '님의 건강 리포트</div><div class="date">작성일: ' + new Date().toLocaleDateString('ko-KR') + '</div></div></div><div class="content"><section class="section"><h2 class="section-title">기본 건강 지표</h2><div class="indicator-grid">' + indicatorsHTML + '</div></section><section class="section"><h2 class="section-title">건강 지표 종합</h2><div class="two-col"><div class="chart-card"><h3 class="chart-title">위험도 분석</h3><div class="chart-container" style="height:250px"><canvas id="radarChart"></canvas></div></div><div class="chart-card"><h3 class="chart-title">지표별 위험도</h3><div class="chart-container" style="height:250px"><canvas id="barChart"></canvas></div></div></div></section><section class="section"><h2 class="section-title">상세 지표 분석</h2><div class="metrics-grid">' + metricsHTML + '</div></section><section class="section"><h2 class="section-title">칼로리 & 영양소</h2><div class="two-col"><div class="chart-card"><h3 class="chart-title">최근 7일 칼로리 추세</h3><div class="chart-container" style="height:200px"><canvas id="calorieChart"></canvas></div></div><div class="chart-card"><h3 class="chart-title">영양소 분포</h3><div class="chart-container" style="height:200px"><canvas id="nutrientChart"></canvas></div></div></div></section><section class="section"><h2 class="section-title">식습관 개선 목표</h2><div class="goals-compact">' + goalsHTML + '</div></section></div><div class="footer"><div class="disclaimer">본 리포트는 AI 기반 분석 결과이며, 전문의 상담을 대체하지 않습니다.<br>정확한 진단과 치료를 위해서는 반드시 의료 전문가와 상담하시기 바랍니다.</div></div></div><script>const r=document.getElementById("radarChart").getContext("2d");new Chart(r,{type:"radar",data:{labels:["허리둘레","혈압","공복혈당","중성지방","HDL-C"],datasets:[{label:"현재 위험도",data:[83,83,50,90,80],backgroundColor:"rgba(239,68,68,0.2)",borderColor:"#ef4444",borderWidth:2,pointBackgroundColor:"#ef4444",pointBorderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:25,font:{size:10,family:"Pretendard"}},pointLabels:{font:{size:11,weight:"600",family:"Pretendard"}}}},plugins:{legend:{display:false}}}});const b=document.getElementById("barChart").getContext("2d");new Chart(b,{type:"bar",data:{labels:["허리둘레","혈압","공복혈당","중성지방","HDL-C"],datasets:[{label:"위험도",data:[83,83,50,90,80],backgroundColor:["#ef4444","#ef4444","#f59e0b","#ef4444","#ef4444"]}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:"y",scales:{x:{beginAtZero:true,max:100,ticks:{font:{size:10,family:"Pretendard"}}},y:{ticks:{font:{size:11,family:"Pretendard"}}}},plugins:{legend:{display:false}}}});const c=document.getElementById("calorieChart").getContext("2d");new Chart(c,{type:"line",data:{labels:["월","화","수","목","금","토","일"],datasets:[{label:"섭취",data:[1850,2100,1750,2200,1900,2400,1850],borderColor:"#84cc16",backgroundColor:"rgba(132,204,22,0.1)",borderWidth:2,tension:0.4,fill:true},{label:"목표",data:[2000,2000,2000,2000,2000,2000,2000],borderColor:"#64748b",borderWidth:2,borderDash:[5,5],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:"top",labels:{font:{size:10,family:"Pretendard"},boxWidth:15}}},scales:{y:{beginAtZero:false,min:1500,max:2500,ticks:{font:{size:9,family:"Pretendard"}}},x:{ticks:{font:{size:10,family:"Pretendard"}}}}}});const n=document.getElementById("nutrientChart").getContext("2d");new Chart(n,{type:"doughnut",data:{labels:["탄수화물","단백질","지방"],datasets:[{data:[120,70,20],backgroundColor:["#f59e0b","#ef4444","#84cc16"],borderWidth:2,borderColor:"#fff"}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"bottom",labels:{font:{size:10,family:"Pretendard"},padding:10}}}}});<' + '/script></body></html>';
+            
+            const blob = new Blob([html], {type: 'text/html;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'NutriGo_건강리포트_' + userName + '_' + new Date().toISOString().split('T')[0] + '.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            console.log('✅ 리포트 생성 완료 - metsData에서 자동으로 읽어옴');
+            alert('✅ ' + userName + '님의 건강 리포트가 성공적으로 다운로드되었습니다!');
+        } catch (error) {
+            console.error('❌ 오류:', error);
+            alert('리포트 생성 중 오류가 발생했습니다: ' + error.message);
+        }
+    }
+    
+    // DOMContentLoaded 이벤트
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('✅ PDF 생성 기능 준비 완료 (한글 완벽 지원)');
+    });
+    </script>
+</body>
+</html>

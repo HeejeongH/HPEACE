@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>건강 기록 UI/UX</title>
+<style>
+  @import url('https://cdnjs.cloudflare.com/ajax/libs/pretendard/1.3.9/variable/pretendardvariable.min.css');
+
+  :root {
+    --bg: #F2F3F5;
+    --card: #FFFFFF;
+    --green: #8BC34A;
+    --green-dark: #6DA52E;
+    --green-light: #E8F5E9;
+    --green-bg: #F1F8E9;
+    --text: #212121;
+    --text-sub: #757575;
+    --text-light: #9E9E9E;
+    --border: #E0E0E0;
+    --border-dash: #C0C0C0;
+    --radius: 16px;
+    --shadow: 0 2px 8px rgba(0,0,0,0.06);
+    --blue: #5B9BD5;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Pretendard Variable', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* ─── Tab Navigation ─── */
+  .tab-bar {
+    display: flex;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .tab {
+    flex: 1;
+    padding: 14px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    border-bottom: 2.5px solid transparent;
+    transition: all 0.2s;
+  }
+  .tab.active {
+    color: var(--text);
+    border-bottom-color: var(--text);
+  }
+
+  /* ─── Page Container ─── */
+  .page {
+    max-width: 390px;
+    margin: 0 auto;
+    display: none;
+    min-height: calc(100vh - 50px);
+    padding-bottom: 20px;
+  }
+  .page.active { display: block; }
+
+  /* ═══════════════════════════════════════ */
+  /*  PAGE 1: 식사 기록 메인                 */
+  /* ═══════════════════════════════════════ */
+
+  .page-header {
+    padding: 20px 20px 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .page-title {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .page-subtitle {
+    font-size: 12px;
+    color: var(--text-light);
+  }
+
+  .main-card {
+    margin: 16px 16px 0;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+  }
+
+  /* Today's Meals */
+  .today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  .today-label {
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .today-kcal {
+    font-size: 13px;
+    color: var(--text-light);
+  }
+  .empty-meals {
+    text-align: center;
+    padding: 40px 0;
+    color: var(--text-light);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* Nutrient Ratio */
+  .nutrient-card {
+    margin: 12px 16px 0;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+  }
+  .nutrient-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .nutrient-circles {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+  }
+  .n-circle {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .n-ring {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 3px solid #E0E0E0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-light);
+  }
+  .n-label {
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+
+  /* Upload Box */
+  .upload-box {
+    margin: 12px 16px 0;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    border: 2px dashed var(--border-dash);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .upload-box:hover {
+    border-color: var(--blue);
+    background: #F8FBFF;
+  }
+  .upload-icon {
+    font-size: 32px;
+  }
+  .upload-title {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .upload-sub {
+    font-size: 12px;
+    color: var(--text-light);
+  }
+
+  /* ─── Daily Survey (하단 설문) ─── */
+  .survey-header {
+    margin: 24px 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .survey-header-title {
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .survey-header-sub {
+    font-size: 11px;
+    color: var(--text-light);
+  }
+
+  .survey-box {
+    margin: 10px 16px 0;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+  }
+
+  /* ─── Q Group (통일 형식) ─── */
+  .q-group { margin-bottom: 16px; }
+  .q-group:last-child { margin-bottom: 0; }
+  .q-group-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+  }
+  .q-group-hint {
+    font-size: 11px;
+    color: var(--text-light);
+    margin: -4px 0 8px;
+  }
+  .q-divider {
+    height: 1px;
+    background: #F0F0F0;
+    margin: 16px 0;
+  }
+
+  /* ─── Chip (통일) ─── */
+  .chip-row { display: flex; gap: 6px; }
+  .chip {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 4px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: var(--card);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .chip:hover { border-color: var(--green); }
+  .chip.selected {
+    border-color: var(--green);
+    background: var(--green-light);
+  }
+  .chip .c-main {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .chip .c-sub {
+    font-size: 10px;
+    color: var(--text-light);
+    white-space: nowrap;
+  }
+  .chip.selected .c-main { color: var(--green-dark); }
+  .chip.selected .c-sub { color: var(--green-dark); }
+
+  /* ─── Counter ─── */
+  .counter-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    padding: 6px 0;
+  }
+  .counter-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: var(--card);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+    user-select: none;
+  }
+  .counter-btn:hover { border-color: var(--green); background: var(--green-light); }
+  .counter-btn:active { transform: scale(0.92); }
+  .counter-val { min-width: 70px; text-align: center; }
+  .counter-num { font-size: 28px; font-weight: 800; color: var(--green-dark); line-height: 1; }
+  .counter-unit { font-size: 11px; color: var(--text-sub); margin-top: 2px; }
+
+  /* ─── Search Panel ─── */
+  .search-panel {
+    margin: 12px 16px 0;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+  }
+  .search-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .search-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: #F0F0F0;
+    font-size: 14px;
+    color: var(--text-sub);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .search-input-wrap {
+    margin-bottom: 12px;
+  }
+  .search-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--green); }
+  .search-input::placeholder { color: var(--text-light); }
+  .search-results {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .search-empty {
+    text-align: center;
+    padding: 20px 0;
+    font-size: 13px;
+    color: var(--text-light);
+  }
+  .search-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.12s;
+  }
+  .search-item:hover { background: var(--green-light); }
+  .search-item-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .search-item-info {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-top: 1px;
+  }
+  .search-item-add {
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--green);
+    background: var(--card);
+    color: var(--green-dark);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.12s;
+    flex-shrink: 0;
+  }
+  .search-item-add:hover { background: var(--green-light); }
+
+
+  /* ═══════════════════════════════════════ */
+  /*  PAGE 2: AI 분석 결과 (사진 촬영 후)     */
+  /* ═══════════════════════════════════════ */
+
+  .food-image {
+    width: 100%;
+    height: 240px;
+    background: #e8e8e8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .food-image .placeholder-img {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-light);
+    font-size: 13px;
+  }
+  .food-image .back-btn {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.35);
+    border: none;
+    color: #fff;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+  }
+
+  .ai-card {
+    margin: -20px 16px 0;
+    position: relative;
+    z-index: 2;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    border: 1.5px solid #E8F5E9;
+  }
+  .ai-card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--green-dark);
+    margin-bottom: 14px;
+  }
+  .nutrient-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 20px;
+    margin-bottom: 14px;
+  }
+  .nutrient-item { display: flex; justify-content: space-between; font-size: 14px; }
+  .nutrient-item .label { color: var(--text-sub); }
+  .nutrient-item .value { font-weight: 700; }
+  .food-recognized { font-size: 13px; color: var(--text-sub); margin-bottom: 8px; }
+  .food-recognized b { color: var(--text); }
+  .feedback-box {
+    background: var(--green-bg);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-top: 12px;
+  }
+  .feedback-box .fb-title { font-size: 13px; font-weight: 700; color: var(--green-dark); margin-bottom: 4px; }
+  .feedback-box .fb-text { font-size: 12px; color: var(--text-sub); line-height: 1.6; }
+  .food-tags { display: flex; gap: 6px; margin-top: 12px; }
+  .food-tag { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; color: #fff; background: var(--green); }
+
+  .white-box {
+    margin: 12px 16px 0;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 18px;
+  }
+  .input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .input-group { display: flex; flex-direction: column; gap: 6px; }
+  .input-label { font-size: 12px; font-weight: 600; color: var(--text-sub); }
+  .select-box {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--card);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239E9E9E' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    cursor: pointer;
+  }
+  .select-box:focus { outline: none; border-color: var(--green); }
+
+  /* Bottom Bar (Page 2 only) */
+  .bottom-bar {
+    margin: 16px 16px 0;
+    display: flex;
+    gap: 10px;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-save { background: var(--green); color: #fff; }
+  .btn-save:hover { background: var(--green-dark); }
+  .btn-retake { background: #616161; color: #fff; }
+
+  .toast-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.3);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; animation: fadeIn 0.2s;
+  }
+  .toast-box {
+    background: #fff; border-radius: 20px;
+    padding: 32px 40px; text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Page indicator */
+  .page-indicator {
+    text-align: center;
+    padding: 10px;
+    font-size: 11px;
+    color: var(--text-light);
+    background: var(--card);
+    border-bottom: 1px solid #F0F0F0;
+  }
+  .page-indicator span {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: #F0F0F0;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- Tab Bar -->
+<div class="tab-bar" style="max-width:390px; margin:0 auto;">
+  <div class="tab active" onclick="showPage(0)">📋 건강 기록</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  PAGE 1: 식사 기록 메인 (기존 앱 구조 반영)      -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page active" id="page0" style="max-width:390px; margin:0 auto;">
+
+  <div class="page-header">
+    <div class="page-title">건강 기록 📋</div>
+  </div>
+
+  <!-- ═══ 식습관 기록 영역 ═══ -->
+  <div class="survey-header" style="margin-top:8px;">
+    <div class="survey-header-title">🍽️ 식습관 기록</div>
+    <div class="survey-header-sub">오늘의 식사를 기록하고 영양성분을 확인하세요</div>
+  </div>
+
+  <!-- 오늘의 식사 -->
+  <div class="main-card">
+    <div class="today-header">
+      <div class="today-label">◀ 오늘의 식사 ▶</div>
+      <div class="today-kcal">0 kcal 섭취</div>
+    </div>
+    <div class="empty-meals">
+      오늘 기록된 식사가 없습니다.<br>사진을 업로드하여 기록해보세요!
+    </div>
+  </div>
+
+  <!-- 영양소 비율 + 업로드 -->
+  <div style="display:flex; gap:10px; margin:12px 16px 0;">
+    <div class="nutrient-card" style="margin:0; flex:1;">
+      <div class="nutrient-title">영양소 비율</div>
+      <div class="nutrient-circles">
+        <div class="n-circle"><div class="n-ring">0g</div><div class="n-label">탄수화물</div></div>
+        <div class="n-circle"><div class="n-ring">0g</div><div class="n-label">단백질</div></div>
+        <div class="n-circle"><div class="n-ring">0g</div><div class="n-label">지방</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:10px; margin:12px 16px 0;">
+    <div class="upload-box" style="margin:0; flex:1;" onclick="showPage(1)">
+      <div class="upload-icon">📤</div>
+      <div class="upload-title">사진 업로드</div>
+      <div class="upload-sub">AI 분석 시작하기</div>
+    </div>
+    <div class="upload-box" style="margin:0; flex:1;" onclick="showPage(2)">
+      <div class="upload-icon">🔍</div>
+      <div class="upload-title">음식 검색</div>
+      <div class="upload-sub">직접 입력하기</div>
+    </div>
+  </div>
+
+  <!-- ═══ 일일 식이 설문 (이 페이지 하단) ═══ -->
+  <div class="survey-box" style="margin-top:24px;">
+
+    <div class="q-group">
+      <div class="q-group-label">💧 오늘 물 섭취량</div>
+      <div class="q-group-hint">한 컵 = 200mL 기준</div>
+      <div class="counter-wrap">
+        <button class="counter-btn" onclick="update('water',-1)">−</button>
+        <div class="counter-val">
+          <div class="counter-num" id="water-num">0</div>
+          <div class="counter-unit" id="water-unit">컵 (0mL)</div>
+        </div>
+        <button class="counter-btn" onclick="update('water',1)">+</button>
+      </div>
+      <div class="chip-row" style="margin-top:10px;">
+        <div class="chip" onclick="set('water',1)"><span class="c-main">1컵 이하</span><span class="c-sub">~200mL</span></div>
+        <div class="chip" onclick="set('water',2)"><span class="c-main">2컵</span><span class="c-sub">400mL</span></div>
+        <div class="chip" onclick="set('water',3)"><span class="c-main">3컵</span><span class="c-sub">600mL</span></div>
+        <div class="chip" onclick="set('water',5)"><span class="c-main">4~5컵</span><span class="c-sub">~1L</span></div>
+        <div class="chip" onclick="set('water',7)"><span class="c-main">6~7컵</span><span class="c-sub">~1.4L</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🥤 오늘 음료 섭취량</div>
+      <div class="q-group-hint">주스, 콜라, 이온음료 등 (물·커피 제외)</div>
+      <div class="counter-wrap">
+        <button class="counter-btn" onclick="update('drink',-1)">−</button>
+        <div class="counter-val">
+          <div class="counter-num" id="drink-num">0</div>
+          <div class="counter-unit">잔</div>
+        </div>
+        <button class="counter-btn" onclick="update('drink',1)">+</button>
+      </div>
+      <div class="chip-row" style="margin-top:10px;">
+        <div class="chip" onclick="set('drink',0)"><span class="c-main">안 마심</span></div>
+        <div class="chip" onclick="set('drink',1)"><span class="c-main">1잔</span></div>
+        <div class="chip" onclick="set('drink',2)"><span class="c-main">2잔</span></div>
+        <div class="chip" onclick="set('drink',3)"><span class="c-main">3잔</span></div>
+        <div class="chip" onclick="set('drink',4)"><span class="c-main">4잔+</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">☕ 오늘 커피 섭취량</div>
+      <div class="q-group-hint">아메리카노, 라떼, 믹스커피 등 모두 포함</div>
+      <div class="counter-wrap">
+        <button class="counter-btn" onclick="update('coffee',-1)">−</button>
+        <div class="counter-val">
+          <div class="counter-num" id="coffee-num">0</div>
+          <div class="counter-unit">잔</div>
+        </div>
+        <button class="counter-btn" onclick="update('coffee',1)">+</button>
+      </div>
+      <div class="chip-row" style="margin-top:10px;">
+        <div class="chip" onclick="set('coffee',0)"><span class="c-main">안 마심</span></div>
+        <div class="chip" onclick="set('coffee',1)"><span class="c-main">1잔</span></div>
+        <div class="chip" onclick="set('coffee',2)"><span class="c-main">2잔</span></div>
+        <div class="chip" onclick="set('coffee',3)"><span class="c-main">3~4잔</span></div>
+        <div class="chip" onclick="set('coffee',5)"><span class="c-main">5잔+</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <button class="btn btn-save" style="width:100%;" onclick="saveSurvey()">✅ 기록 저장</button>
+    </div>
+
+  </div>
+
+  <!-- ═══ 생활습관 기록 영역 (일별) ═══ -->
+  <div class="survey-header" style="margin-top:24px;">
+    <div class="survey-header-title">🏃 생활습관 기록</div>
+  </div>
+
+  <div class="survey-box" style="margin-top:10px;">
+
+    <div class="q-group">
+      <div class="q-group-label">🏋️ 오늘 30분 이상 운동했나요?</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">안 했어요</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">했어요</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🚬 오늘 금연했나요?</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">안 했어요</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">했어요</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🍺 오늘 금주했나요?</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">안 했어요</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">했어요</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:18px;">
+      <button class="btn btn-save" style="width:100%;" onclick="saveLifestyle()">✅ 기록 저장</button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  PAGE 2: AI 분석 결과 (사진 촬영 후)              -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page" id="page1" style="max-width:390px; margin:0 auto;">
+
+  <div class="food-image">
+    <button class="back-btn" onclick="showPage(0)">←</button>
+    <div class="placeholder-img">
+      <svg width="48" height="48" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+      </svg>
+      <span>디저트와 커피 이미지</span>
+    </div>
+  </div>
+
+  <div class="ai-card">
+    <div class="ai-card-title">🤖 AI 분석 결과</div>
+    <div class="nutrient-grid">
+      <div class="nutrient-item"><span class="label">칼로리</span><span class="value">334.5kcal</span></div>
+      <div class="nutrient-item"><span class="label">탄수화물</span><span class="value">32.5g</span></div>
+      <div class="nutrient-item"><span class="label">단백질</span><span class="value">5.6g</span></div>
+      <div class="nutrient-item"><span class="label">지방</span><span class="value">20.2g</span></div>
+      <div class="nutrient-item"><span class="label">나트륨</span><span class="value">342.8mg</span></div>
+    </div>
+    <div class="food-recognized"><b>인식된 음식:</b> 디저트와 커피</div>
+    <div class="feedback-box">
+      <div class="fb-title">💡 맞춤 피드백:</div>
+      <div class="fb-text">디저트는 당분과 지방이 높으므로 적당히 섭취하세요. 커피는 카페인 섭취량을 고려하세요.</div>
+    </div>
+    <div class="food-tags">
+      <span class="food-tag">디저트</span>
+      <span class="food-tag">커피</span>
+      <span class="food-tag">베이커리</span>
+    </div>
+  </div>
+
+  <!-- 섭취량 + 밥양 (한 박스) -->
+  <div class="white-box">
+    <div class="input-row">
+      <div class="input-group">
+        <span class="input-label">📅 날짜</span>
+        <select class="select-box"><option>2025. 11. 23.</option></select>
+      </div>
+      <div class="input-group">
+        <span class="input-label">🍽️ 식사 구분</span>
+        <select class="select-box">
+          <option>간식</option><option>아침</option><option selected>점심</option><option>저녁</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="q-group">
+      <div class="q-group-label">🍴 섭취량</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">0.5인분</span><span class="c-sub">매우 적음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">0.75인분</span><span class="c-sub">적음</span></div>
+        <div class="chip selected" onclick="sel(this)"><span class="c-main">1인분</span><span class="c-sub">보통</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">1.5인분</span><span class="c-sub">많음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">2인분+</span><span class="c-sub">매우 많음</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🍚 밥(주식) 양</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">0.5공기</span><span class="c-sub">매우 적음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">0.75공기</span><span class="c-sub">적음</span></div>
+        <div class="chip selected" onclick="sel(this)"><span class="c-main">1공기</span><span class="c-sub">보통</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">1.5공기</span><span class="c-sub">많음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">2공기+</span><span class="c-sub">매우 많음</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🍴 외식 여부</div>
+      <div class="q-group-hint">외식, 배달, 포장 모두 포함</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">직접 조리</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">외식</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🧂 소금·간장 추가 여부</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">넣지 않음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">넣음</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <button class="btn btn-save" onclick="save()">✅ 기록 저장</button>
+    <button class="btn btn-retake">📷 다시 촬영</button>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════ -->
+<!--  PAGE 3: 음식 검색/직접 입력                       -->
+<!-- ═══════════════════════════════════════════════ -->
+<div class="page" id="page2" style="max-width:390px; margin:0 auto; padding-bottom:20px;">
+
+  <!-- 검색 영역 -->
+  <div class="search-panel" style="margin-top:12px;">
+    <div class="search-panel-header">
+      <div class="q-group-label" style="margin:0;">🔍 음식 검색 또는 직접 입력</div>
+      <button class="search-close" onclick="showPage(0)">✕</button>
+    </div>
+    <div class="search-input-wrap">
+      <input type="text" class="search-input" id="searchInput" placeholder="음식 이름을 입력하세요 (예: 된장찌개, 샐러드)" oninput="onSearch(this.value)">
+    </div>
+    <div class="search-results" id="searchResults">
+      <div class="search-empty">음식 이름을 입력하면 검색 결과가 표시됩니다</div>
+    </div>
+  </div>
+
+  <!-- 선택된 음식 표시 -->
+  <div class="white-box" id="selectedFoodCard" style="display:none;">
+    <div class="ai-card-title" style="color:var(--green-dark);">✅ 선택된 음식</div>
+    <div id="selectedFoodName" style="font-size:16px; font-weight:700; margin-bottom:4px;"></div>
+    <div id="selectedFoodInfo" style="font-size:13px; color:var(--text-sub);"></div>
+  </div>
+
+  <!-- 날짜/식사구분/섭취량/밥양 (사진 기록과 동일) -->
+  <div class="white-box">
+    <div class="input-row">
+      <div class="input-group">
+        <span class="input-label">📅 날짜</span>
+        <select class="select-box"><option>2025. 11. 23.</option></select>
+      </div>
+      <div class="input-group">
+        <span class="input-label">🍽️ 식사 구분</span>
+        <select class="select-box">
+          <option>간식</option><option>아침</option><option selected>점심</option><option>저녁</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="q-group">
+      <div class="q-group-label">🍴 섭취량</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">0.5인분</span><span class="c-sub">매우 적음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">0.75인분</span><span class="c-sub">적음</span></div>
+        <div class="chip selected" onclick="sel(this)"><span class="c-main">1인분</span><span class="c-sub">보통</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">1.5인분</span><span class="c-sub">많음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">2인분+</span><span class="c-sub">매우 많음</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🍚 밥(주식) 양</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">0.5공기</span><span class="c-sub">매우 적음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">0.75공기</span><span class="c-sub">적음</span></div>
+        <div class="chip selected" onclick="sel(this)"><span class="c-main">1공기</span><span class="c-sub">보통</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">1.5공기</span><span class="c-sub">많음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">2공기+</span><span class="c-sub">매우 많음</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🍴 외식 여부</div>
+      <div class="q-group-hint">외식, 배달, 포장 모두 포함</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">직접 조리</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">외식</span></div>
+      </div>
+    </div>
+
+    <div class="q-divider"></div>
+
+    <div class="q-group">
+      <div class="q-group-label">🧂 소금·간장 추가 여부</div>
+      <div class="chip-row">
+        <div class="chip" onclick="sel(this)"><span class="c-main">넣지 않음</span></div>
+        <div class="chip" onclick="sel(this)"><span class="c-main">넣음</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin:16px 16px 0; display:flex; gap:10px;">
+    <button class="btn btn-save" onclick="save()">✅ 기록 저장</button>
+    <button class="btn btn-retake" onclick="showPage(0)">← 돌아가기</button>
+  </div>
+
+</div>
+
+<script>
+function showPage(n) {
+  document.querySelectorAll('.page').forEach((p,i) => p.classList.toggle('active', i===n));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===n));
+}
+
+// 검색 기능
+
+const foodDB = [
+  { name: '흰쌀밥', info: '1공기 · 300kcal', kcal: 300 },
+  { name: '된장찌개', info: '1인분 · 120kcal', kcal: 120 },
+  { name: '김치찌개', info: '1인분 · 160kcal', kcal: 160 },
+  { name: '제육볶음', info: '1인분 · 380kcal', kcal: 380 },
+  { name: '불고기', info: '1인분 · 350kcal', kcal: 350 },
+  { name: '비빔밥', info: '1인분 · 550kcal', kcal: 550 },
+  { name: '닭가슴살 샐러드', info: '1인분 · 220kcal', kcal: 220 },
+  { name: '삼겹살', info: '1인분(200g) · 580kcal', kcal: 580 },
+  { name: '떡볶이', info: '1인분 · 430kcal', kcal: 430 },
+  { name: '라면', info: '1인분 · 500kcal', kcal: 500 },
+  { name: '김밥', info: '1줄 · 380kcal', kcal: 380 },
+  { name: '치킨', info: '1인분(3조각) · 450kcal', kcal: 450 },
+  { name: '피자', info: '1조각 · 280kcal', kcal: 280 },
+  { name: '아메리카노', info: '1잔 · 10kcal', kcal: 10 },
+  { name: '카페라떼', info: '1잔 · 180kcal', kcal: 180 },
+  { name: '시저 샐러드', info: '1인분 · 350kcal', kcal: 350 },
+  { name: '계란프라이', info: '1개 · 90kcal', kcal: 90 },
+  { name: '두부', info: '반모 · 80kcal', kcal: 80 },
+  { name: '고등어구이', info: '1토막 · 180kcal', kcal: 180 },
+  { name: '미역국', info: '1인분 · 45kcal', kcal: 45 },
+];
+
+function onSearch(q) {
+  const box = document.getElementById('searchResults');
+  if (!q.trim()) {
+    box.innerHTML = '<div class="search-empty">음식 이름을 입력하면 검색 결과가 표시됩니다</div>';
+    return;
+  }
+  const results = foodDB.filter(f => f.name.includes(q));
+  if (results.length === 0) {
+    box.innerHTML = '<div class="search-empty">검색 결과가 없습니다</div>' +
+      '<div class="search-item" onclick="addCustomFood(\'' + q + '\')">' +
+        '<div><div class="search-item-name">📝 "' + q + '" 직접 추가</div>' +
+        '<div class="search-item-info">음식 이름을 직접 입력하여 기록합니다</div></div>' +
+        '<button class="search-item-add">추가</button></div>';
+    return;
+  }
+  box.innerHTML = results.map(f =>
+    '<div class="search-item" onclick="addFood(\'' + f.name + '\',\'' + f.info + '\')">' +
+      '<div><div class="search-item-name">' + f.name + '</div>' +
+      '<div class="search-item-info">' + f.info + '</div></div>' +
+      '<button class="search-item-add">추가</button></div>'
+  ).join('');
+}
+
+function addFood(name, info) {
+  document.getElementById('selectedFoodCard').style.display = 'block';
+  document.getElementById('selectedFoodName').textContent = name;
+  document.getElementById('selectedFoodInfo').textContent = info;
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '';
+}
+function addCustomFood(name) {
+  document.getElementById('selectedFoodCard').style.display = 'block';
+  document.getElementById('selectedFoodName').textContent = name;
+  document.getElementById('selectedFoodInfo').textContent = '직접 입력한 음식';
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchResults').innerHTML = '';
+}
+function sel(el) {
+  el.closest('.chip-row').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+const vals = { water: 0, drink: 0, coffee: 0, exercise: 0, smoke: 0, alcohol: 0 };
+
+function update(type, d) {
+  vals[type] = Math.max(0, Math.min(type === 'exercise' ? 300 : 30, vals[type] + d));
+  render(type);
+}
+
+function set(type, v) {
+  vals[type] = v;
+  render(type);
+  const el = document.getElementById(type + '-num');
+  const chips = el.closest('.q-group').querySelectorAll('.chip');
+  chips.forEach(c => c.classList.remove('selected'));
+}
+
+function render(type) {
+  document.getElementById(type + '-num').textContent = vals[type];
+  if (type === 'water') {
+    document.getElementById('water-unit').textContent = '컵 (' + (vals.water * 200).toLocaleString() + 'mL)';
+  }
+}
+
+function saveSurvey() {
+  showToast('기록 저장 완료!');
+}
+function saveLifestyle() {
+  showToast('기록 저장 완료!');
+}
+function showToast(msg) {
+  const o = document.createElement('div');
+  o.className = 'toast-overlay';
+  const b = document.createElement('div');
+  b.className = 'toast-box';
+  b.innerHTML = '<div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:700">' + msg + '</div>';
+  o.appendChild(b);
+  document.body.appendChild(o);
+  o.onclick = () => o.remove();
+}
+function save() {
+  const o = document.createElement('div');
+  o.className = 'toast-overlay';
+  const b = document.createElement('div');
+  b.className = 'toast-box';
+  b.innerHTML = '<div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:700;margin-bottom:4px">기록 완료!</div><div style="font-size:13px;color:#757575">식이 기록이 저장되었습니다</div>';
+  o.appendChild(b);
+  document.body.appendChild(o);
+  o.onclick = () => o.remove();
+}
+</script>
+
+</body>
+</html>

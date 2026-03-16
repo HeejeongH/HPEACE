@@ -1,0 +1,221 @@
+[
+  {
+    "measure_name_en": "Meal Frequency",
+    "measure_name_ko": "식사빈도",
+    "html_name_ko": "식사빈도",
+    "id": "D1",
+    "surveys": [
+      { "category": 3, "description": "하루 3끼 먹는다" },
+      { "category": 2, "description": "끼니를 거를 때가 많다" },
+      { "category": 1, "description": "불규칙하다" }
+    ]
+  },
+  {
+    "measure_name_en": "Meal Portion Size",
+    "measure_name_ko": "평상시 식사량",
+    "html_name_ko": "식사량",
+    "id": "D2",
+    "surveys": [
+      { "category": 3, "description": "과식한다" },
+      { "category": 2, "description": "보통이다" },
+      { "category": 1, "description": "소식하는 편이다" }
+    ]
+  },
+  {
+    "measure_name_en": "Eating Out Frequency",
+    "measure_name_ko": "외식빈도",
+    "html_name_ko": "외식",
+    "id": "D3",
+    "surveys": [
+      { "category": 4, "description": "매일" },
+      { "category": 3, "description": "주 3~6회" },
+      { "category": 2, "description": "주 1~2회" },
+      { "category": 1, "description": "월 3회 이하" }
+    ]
+  },
+  {
+    "measure_name_en": "Snacking Frequency",
+    "measure_name_ko": "식사 외 간식빈도",
+    "html_name_ko": "간식",
+    "id": "D4",
+    "surveys": [
+      { "category": 3, "description": "자주(주 3회 이상)" },
+      { "category": 2, "description": "가끔(주 2회 이하)" },
+      { "category": 1, "description": "거의 먹지 않는다" }
+    ]
+  },
+  {
+    "measure_name_en": "Rice Portion Size",
+    "measure_name_ko": "한끼 밥먹는 양",
+    "html_name_ko": "밥양",
+    "id": "D5",
+    "surveys": [
+      { "category": 3, "description": "1공기보다 많다" },
+      { "category": 2, "description": "2/3~1공기 정도이다" },
+      { "category": 1, "description": "1/2공기 이하이다" }
+    ]
+  },
+  {
+    "measure_name_en": "Grain Products",
+    "measure_name_ko": "곡류(밥, 국수, 빵, 떡, 시리얼, 감자, 고구마, 선식 등) 섭취빈도",
+    "html_name_ko": "곡류",
+    "id": "D6",
+    "surveys": [
+      { "category": 3, "description": "하루 3끼" },
+      { "category": 2, "description": "하루 1~2끼" },
+      { "category": 1, "description": "주 6회 이하" }
+    ]
+  },
+  {
+    "measure_name_en": "Protein Foods",
+    "measure_name_ko": "고기, 생선, 두부, 달걀 반찬 중 하나 섭취빈도",
+    "html_name_ko": "단백질 반찬",
+    "id": "D7",
+    "surveys": [
+      { "category": 4, "description": "하루 2끼 이상" },
+      { "category": 3, "description": "하루 1끼 정도" },
+      { "category": 2, "description": "주 3~6회" },
+      { "category": 1, "description": "주 2회 이하 또는 거의 안 먹음" }
+    ]
+  },
+  {
+    "measure_name_en": "Vegetables",
+    "measure_name_ko": "김치를 제외한 채소반찬(생채소, 나물, 샐러드 등) 섭취빈도",
+    "html_name_ko": "채소반찬",
+    "id": "D8",
+    "surveys": [
+      { "category": 4, "description": "하루 2끼 이상" },
+      { "category": 3, "description": "하루 1끼 정도" },
+      { "category": 2, "description": "주 3~6회" },
+      { "category": 1, "description": "주 2회 이하 또는 거의 안 먹음" }
+    ]
+  },
+  {
+    "measure_name_en": "Dairy Products",
+    "measure_name_ko": "우유, 유제품 섭취빈도",
+    "html_name_ko": "유제품",
+    "id": "D9",
+    "surveys": [
+      { "category": 4, "description": "하루 3회 이상" },
+      { "category": 3, "description": "하루 1~2회" },
+      { "category": 2, "description": "주 3~6회" },
+      { "category": 1, "description": "주 2회 이하 또는 거의 안 먹음" }
+    ]
+  },
+  {
+    "measure_name_en": "Fruits",
+    "measure_name_ko": "과일 섭취빈도",
+    "html_name_ko": "과일",
+    "id": "D10",
+    "surveys": [
+      { "category": 3, "description": "매일" },
+      { "category": 2, "description": "주 3~6회" },
+      { "category": 1, "description": "주 2회 이하 또는 거의 안 먹음" }
+    ]
+  },
+  {
+    "measure_name_en": "Water Intake",
+    "measure_name_ko": "물 섭취빈도",
+    "html_name_ko": "물",
+    "id": "D11",
+    "surveys": [
+      { "category": 4, "description": "하루 6컵 이상" },
+      { "category": 3, "description": "하루 4~5컵" },
+      { "category": 2, "description": "하루 2~3컵" },
+      { "category": 1, "description": "하루 1컵 이하 또는 거의 안 먹음" }
+    ]
+  },
+  {
+    "measure_name_en": "Fried Foods",
+    "measure_name_ko": "튀김, 부침개 섭취빈도",
+    "html_name_ko": "튀김류",
+    "id": "D12",
+    "surveys": [
+      { "category": 4, "description": "하루 2회 이상" },
+      { "category": 3, "description": "하루 1회 정도" },
+      { "category": 2, "description": "주 3~6회" },
+      { "category": 1, "description": "주 2회 이하 또는 거의 안 먹음" }
+    ]
+  },
+  {
+    "measure_name_en": "High Fat Meat",
+    "measure_name_ko": "지방많은 육류(삼겹살, 갈비, 장어 등) 섭취빈도",
+    "html_name_ko": "지방 많은 육류",
+    "id": "D13",
+    "surveys": [
+      { "category": 4, "description": "하루 2회 이상" },
+      { "category": 3, "description": "하루 1회 정도" },
+      { "category": 2, "description": "주 3~6회" },
+      { "category": 1, "description": "주 2회 이하 또는 거의 안 먹음" }
+    ]
+  },
+  {
+    "measure_name_en": "Processed Foods",
+    "measure_name_ko": "인스턴트 가공 식품 섭취빈도",
+    "html_name_ko": "인스턴트/가공식품",
+    "id": "D14",
+    "surveys": [
+      { "category": 4, "description": "하루 2회 이상" },
+      { "category": 3, "description": "하루 1회 정도" },
+      { "category": 2, "description": "주 3~6회" },
+      { "category": 1, "description": "주 2회 이하 또는 거의 안 먹음" }
+    ]
+  },
+  {
+    "measure_name_en": "Additional Salt Use",
+    "measure_name_ko": "식사할 때 음식에 소금이나 간장을 추가로 넣는 식습관",
+    "html_name_ko": "소금/간장 추가",
+    "id": "D15",
+    "surveys": [
+      { "category": 3, "description": "자주 넣는다" },
+      { "category": 2, "description": "가끔 넣는다" },
+      { "category": 1, "description": "전혀 넣지 않는다" }
+    ]
+  },
+  {
+    "measure_name_en": "Salty Food Consumption",
+    "measure_name_ko": "젓갈, 장아찌, 국물 위주 식사 등 짜게 먹는 식습관",
+    "html_name_ko": "짠 음식",
+    "id": "D16",
+    "surveys": [
+      { "category": 3, "description": "그렇다" },
+      { "category": 2, "description": "보통이다" },
+      { "category": 1, "description": "그렇지 않다" }
+    ]
+  },
+  {
+    "measure_name_en": "Sweet Food Consumption",
+    "measure_name_ko": "단 음식(아이스크림, 케이크, 스낵 등) 섭취빈도",
+    "html_name_ko": "단 음식",
+    "id": "D17",
+    "surveys": [
+      { "category": 3, "description": "자주(주 3회 이상)" },
+      { "category": 2, "description": "가끔(주 2회 이하)" },
+      { "category": 1, "description": "전혀 먹지 않는다" }
+    ]
+  },
+  {
+    "measure_name_en": "Sugar-Sweetened Beverages",
+    "measure_name_ko": "주스, 음료류(콜라, 사이다, 이온음료 등), 드링크류 섭취빈도",
+    "html_name_ko": "음료",
+    "id": "D18",
+    "surveys": [
+      { "category": 4, "description": "하루 2컵 이상" },
+      { "category": 3, "description": "하루 1컵 정도" },
+      { "category": 2, "description": "주 3~6컵" },
+      { "category": 1, "description": "주 2컵 이하 또는 거의 안 마심" }
+    ]
+  },
+  {
+    "measure_name_en": "Coffee Consumption",
+    "measure_name_ko": "커피 섭취빈도",
+    "html_name_ko": "커피",
+    "id": "D19",
+    "surveys": [
+      { "category": 4, "description": "하루 5잔 이상" },
+      { "category": 3, "description": "하루 3~4잔 정도" },
+      { "category": 2, "description": "하루 1~2잔" },
+      { "category": 1, "description": "주 6잔 이하 또는 거의 안 마심" }
+    ]
+  }
+]

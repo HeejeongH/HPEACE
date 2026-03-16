@@ -1,0 +1,2 @@
+Latent_Activation,Norm_Type,Layers,Latent_Dim,Use_Pos_Weight,Best_Val_Accuracy,Best_Val_AUC,Best_Val_Loss,Best_Epoch,Best_Val_Recon_RMSE
+False,none,3,4,True,0.5738,0.6334,1.3496,148,0.8168
